@@ -5,6 +5,8 @@ import { useAuth } from '@/context/AuthContext';
 import { useAsync } from '@/hooks/useAsync';
 import { backends } from '@/services/database';
 import { formatDuration } from '@/services/analytics/trends';
+import { GeminiPanel } from '@/components/AI/GeminiPanel';
+import { coachPayload } from '@/services/ai/gemini';
 import { Badge, DemoBadge, Disclaimer, EmptyState, ErrorBox, PageHeader, Panel, Spinner, Stat } from '@/components/UI/primitives';
 import { TrendChart } from '@/components/Charts/TrendChart';
 import { dateTime, deg, pct } from '@/utils/format';
@@ -150,6 +152,12 @@ export default function SessionSummary() {
           </div>
         </Panel>
       )}
+      <Panel className="p-6">
+        <h2 className="font-semibold">{user?.role === 'PATIENT' ? 'Your AI coach' : 'Gemini explanation for the patient'}</h2>
+        <p className="mb-4 text-xs text-muted">Gemini explains this session in simple words, in English or Hindi.</p>
+        <GeminiPanel cta="Explain my session" withLanguage buildRequest={(language) => ({ task: 'patient_coach', language, data: coachPayload(s) })} />
+      </Panel>
+
       <Disclaimer compact />
     </div>
   );

@@ -16,6 +16,11 @@
   - **Anomaly detection:** z-score of the latest session against the patient’s own baseline (ROM, form) + pain-spike check → “AI anomaly” review flag for the therapist.
   - **Live AI telemetry** on the exercise screen: frames/s, model inference time, GPU/CPU delegate, pose confidence, people in frame, exercise-match check.
   - Tests: `tests/predict.test.ts`.
+- **Google Gemini integration** (`gemini-3.8-flash` by default, override with `GEMINI_MODEL`):
+  - Therapist: **“Summarise this patient with Gemini”** on the patient page → summary, things to watch, options to consider.
+  - Patient: **AI coach** on the session result page → explains the session in simple **English or Hindi**.
+  - Secure by design: the browser calls our own `/api/gemini`; the key lives only on the server (Netlify Function `netlify/functions/gemini.ts`, or the Vite dev server locally). Only anonymised numbers are sent (patient code, no name/phone), the endpoint accepts only these two fixed tasks, and prompts forbid diagnosis.
+  - Setup: add `GEMINI_API_KEY=...` to `.env` (local, then `npm run dev`) or to Netlify → Site settings → Environment variables. Get a key at https://aistudio.google.com/apikey.
 - Renamed RehabX → **NavGati**. Demo patients: Aarav Sharma, Priya Nair, Arjun Mehta, Kavya Reddy (fictional).
 
 **Built before the event (existing base):** camera pose tracking (MediaPipe), rep counting, ROM, form feedback, patient/therapist dashboards, notes.

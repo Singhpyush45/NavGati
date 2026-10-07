@@ -8,6 +8,8 @@ import { TherapistNotes } from '@/components/Dashboard/TherapistNotes';
 import { CarePlanEditor } from '@/components/CarePlan/CarePlanEditor';
 import { PatientProfileCard } from '@/components/Dashboard/PatientProfileCard';
 import { AiInsights } from '@/components/Dashboard/AiInsights';
+import { GeminiPanel } from '@/components/AI/GeminiPanel';
+import { therapistPayload } from '@/services/ai/gemini';
 import { MessageThread } from '@/components/Messages/MessageThread';
 import { unreadFor } from '@/services/analytics/messages';
 import { CarePlanProgress } from '@/components/CarePlan/CarePlanProgress';
@@ -111,6 +113,11 @@ export default function PatientDetails() {
             <span className="text-xs text-muted">Recovery forecast + anomaly detection, computed on-device</span>
           </div>
           <AiInsights sessions={current} goal={activePlan?.items.find((i) => i.exerciseId === exId)?.targetRom ?? null} exerciseName={ex?.name} />
+          <div className="mt-5 border-t border-line pt-5">
+            <h3 className="mb-3 text-sm font-semibold">Gemini clinical summary</h3>
+            <GeminiPanel cta="Summarise this patient with Gemini" note="Sends anonymised numbers only (patient code, no name or phone)."
+              buildRequest={() => ({ task: 'therapist_summary', data: therapistPayload(patient, current, sessions, activePlan, data.messages, activePlan?.items.find((i) => i.exerciseId === exId)?.targetRom ?? null) })} />
+          </div>
         </Panel>
       )}
 

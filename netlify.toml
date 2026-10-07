@@ -5,6 +5,15 @@
 [build.environment]
   NODE_VERSION = "20"
 
+[functions]
+  directory = "netlify/functions"
+
+# Gemini API proxy (key stays server-side). Must come before the SPA catch-all.
+[[redirects]]
+  from = "/api/gemini"
+  to = "/.netlify/functions/gemini"
+  status = 200
+
 # Single-page app: send every route (e.g. /app, /sessions/123) to index.html
 [[redirects]]
   from = "/*"
