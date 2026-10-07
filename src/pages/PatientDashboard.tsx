@@ -42,12 +42,12 @@ export default function PatientDashboard() {
   const newReplies = unreadFor(data?.messages ?? [], 'PATIENT').length;
   const todayKey = dayKey(new Date());
   const todays = all.filter((s) => dayKey(s.startedAt) === todayKey);
-  const todaysEx = todays.filter((s) => s.exerciseId === exId);
-  const latest = todaysEx[todaysEx.length - 1] ?? null;
   const progress = planProgress(data?.plan ?? null, all);
   const next = progress.nextUp;
   // The care plan decides today's exercise; without a plan, fall back to the last exercise done.
   const exId = next?.exerciseId ?? currentExercise(all) ?? 'knee_extension';
+  const todaysEx = todays.filter((s) => s.exerciseId === exId);
+  const latest = todaysEx[todaysEx.length - 1] ?? null;
   const exSessions = all.filter((s) => s.exerciseId === exId);
   const series = toSeries(exSessions);
   const t = trends(exSessions);
