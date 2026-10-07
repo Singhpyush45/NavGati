@@ -5,6 +5,10 @@ import { useAsync } from '@/hooks/useAsync';
 import { backends } from '@/services/database';
 import { adherence, aggregateDeviations, byDate, consistency, painSummary } from '@/services/analytics/trends';
 import { TherapistNotes } from '@/components/Dashboard/TherapistNotes';
+import { CarePlanEditor } from '@/components/CarePlan/CarePlanEditor';
+import { CarePlanProgress } from '@/components/CarePlan/CarePlanProgress';
+import { planProgress } from '@/services/analytics/carePlan';
+import type { CarePlan } from '@/types';
 import { ActivityHeatmap } from '@/components/Dashboard/ActivityHeatmap';
 import { currentExercise, toSeries, trends } from '@/services/analytics/series';
 import { getExercise } from '@/services/exercise/exercises';
@@ -17,13 +21,15 @@ export default function PatientDetails() {
   const { id } = useParams();
   const { user } = useAuth();
   const [picked, setPicked] = useState<string | null>(null);
+  const [plan, setPlan] = useState<CarePlan | null | undefined>(undefined);
   const { data, error, loading, retry } = useAsync(async () => {
     // Access check: a therapist only sees patients assigned to them (also enforced by Supabase RLS).
     const assigned = await backends.data.listPatients(user!);
     const patient = assigned.find((p) => p.id === id) ?? null;
     const sessions = patient ? (await backends.data.listSessions(patient.id)).sort(byDate) : [];
     const notes = patient ? await backends.data.listNotes(patient.id).catch(() => []) : [];
-    return { patient, sessions, notes };
+    const carePlan = patient ? await backends.data.getCarePlan(patient.id).catch(() => null) : null;
+    return { patient, sessions, notes, carePlan };
   }, [id, user?.id]);
 
   if (loading) return <Spinner label="Loading patient…" />;
@@ -41,6 +47,8 @@ export default function PatientDetails() {
   const devs = aggregateDeviations(current.slice(-5));
   const c = consistency(sessions);
   const pain = painSummary(current);
+  const activePlan = plan === undefined ? data.carePlan : plan;
+  const progress = planProgress(activePlan, sessions);
 
   return (
     <div className="space-y-6">
@@ -57,6 +65,20 @@ export default function PatientDetails() {
           <Link to="/therapist" className="btn-secondary">All patients</Link>
         </>}
       />
+
+      <Panel className="p-6">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="font-semibold">Weekly care plan</h2>
+            <p className="text-xs text-muted">Prescribe exercises, reps and sessions per week. The patient sees this on their home screen.</p>
+          </div>
+          {progress.behind.length > 0 && <span className="rounded-full bg-signal/15 px-2.5 py-0.5 text-xs font-medium text-signal">Behind: {progress.behind.join(', ')}</span>}
+        </div>
+        <div className="mt-5 grid gap-6 lg:grid-cols-2">
+          <div><h3 className="mb-3 text-sm font-medium text-muted">This week</h3><CarePlanProgress progress={progress} mode="therapist" /></div>
+          <div><h3 className="mb-3 text-sm font-medium text-muted">Edit plan</h3><CarePlanEditor patientId={patient.id} author={user!} initial={activePlan} onSaved={setPlan} /></div>
+        </div>
+      </Panel>
 
       {!sessions.length ? (
         <EmptyState title="No sessions recorded" body="Sessions will appear once this patient completes an exercise." />

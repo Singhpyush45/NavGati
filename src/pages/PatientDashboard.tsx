@@ -12,6 +12,8 @@ import { byDate, consistency, dayKey, formatDuration, milestones, streak } from 
 import { currentExercise, toSeries, trends } from '@/services/analytics/series';
 import { getExercise } from '@/services/exercise/exercises';
 import { getPrefs } from '@/utils/prefs';
+import { CarePlanProgress } from '@/components/CarePlan/CarePlanProgress';
+import { planProgress, startLink } from '@/services/analytics/carePlan';
 import { deg, pct, shortDate } from '@/utils/format';
 
 function greeting() {
@@ -22,8 +24,12 @@ function greeting() {
 export default function PatientDashboard() {
   const { user } = useAuth();
   const { data, error, loading, retry } = useAsync(async () => {
-    const [sessions, notes] = await Promise.all([backends.data.listSessions(user!.id), backends.data.listNotes(user!.id).catch(() => [])]);
-    return { sessions, notes };
+    const [sessions, notes, plan] = await Promise.all([
+      backends.data.listSessions(user!.id),
+      backends.data.listNotes(user!.id).catch(() => []),
+      backends.data.getCarePlan(user!.id).catch(() => null),
+    ]);
+    return { sessions, notes, plan };
   }, [user?.id]);
 
   if (loading) return <Spinner label="Loading your sessions…" />;
@@ -33,7 +39,10 @@ export default function PatientDashboard() {
   const todayKey = dayKey(new Date());
   const todays = all.filter((s) => dayKey(s.startedAt) === todayKey);
   const latest = todays[todays.length - 1] ?? null;
-  const exId = currentExercise(all) ?? 'knee_extension';
+  const progress = planProgress(data?.plan ?? null, all);
+  const next = progress.nextUp;
+  // The care plan decides today's exercise; without a plan, fall back to the last exercise done.
+  const exId = next?.exerciseId ?? currentExercise(all) ?? 'knee_extension';
   const exSessions = all.filter((s) => s.exerciseId === exId);
   const series = toSeries(exSessions);
   const t = trends(exSessions);
@@ -42,7 +51,9 @@ export default function PatientDashboard() {
   const ex = getExercise(exId)!;
   const hasDemo = all.some((s) => s.isDemoData);
   const firstName = user?.name.split(' ')[0] ?? '';
-  const target = getPrefs().defaultTargetReps;
+  const target = next?.targetReps ?? getPrefs().defaultTargetReps;
+  const startHref = next ? startLink(next) : `/setup?exercise=${exId}`;
+  const planDone = progress.items.length > 0 && !next;
 
   return (
     <div className="space-y-6">
@@ -57,7 +68,7 @@ export default function PatientDashboard() {
           <div className="spin-slow absolute -right-20 -top-20 h-56 w-56 rounded-full border-[22px] border-white/10" aria-hidden="true" />
           <div className="relative grid items-center gap-6 sm:grid-cols-[1fr_210px]">
             <div>
-              <p className="text-sm text-white/80">Today’s exercise</p>
+              <p className="text-sm text-white/80">{next ? 'Next in your care plan' : planDone ? 'Care plan done for today' : 'Today’s exercise'}</p>
               <h2 className="mt-1 text-3xl font-semibold tracking-tight">{ex.name}</h2>
               <p className="mt-2 text-sm text-white/85">{target} repetitions · {ex.position === 'seated' ? 'seated' : 'standing'} · about 4 minutes</p>
               {latest ? (
@@ -66,7 +77,7 @@ export default function PatientDashboard() {
                 <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-sm backdrop-blur"><span className="h-2 w-2 animate-pulse rounded-full bg-white" /> Not done yet today</p>
               )}
               <div className="mt-6 flex flex-wrap gap-2">
-                <Link to={`/setup?exercise=${exId}`} className="btn !bg-white !px-5 !py-3 font-semibold !text-[#0b3b3d] shadow-lg hover:!-translate-y-0.5">
+                <Link to={startHref} className="btn !bg-white !px-5 !py-3 font-semibold !text-[#0b3b3d] shadow-lg hover:!-translate-y-0.5">
                   {latest ? 'Do another session' : 'Start today’s exercise'}
                 </Link>
                 {latest && <Link to={`/sessions/${latest.id}`} className="btn border border-white/40 text-white hover:bg-white/10">View result</Link>}
@@ -97,6 +108,16 @@ export default function PatientDashboard() {
             <div className="text-xs text-muted">Note from {note.authorName} · {shortDate(note.createdAt)}</div>
             <p className="mt-1 text-[15px] leading-relaxed">{note.body}</p>
           </div>
+        </Panel>
+      )}
+
+      {progress.items.length > 0 && (
+        <Panel className="p-6">
+          <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="font-semibold">My care plan</h2>
+            <span className="text-xs text-muted">Set by {data?.plan?.updatedByName} · resets every Monday</span>
+          </div>
+          <CarePlanProgress progress={progress} mode="patient" />
         </Panel>
       )}
 

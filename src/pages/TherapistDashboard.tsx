@@ -6,6 +6,7 @@ import { backends } from '@/services/database';
 import { adherence, byDate, consistency, painSummary } from '@/services/analytics/trends';
 import { currentExercise, trends } from '@/services/analytics/series';
 import { getExercise } from '@/services/exercise/exercises';
+import { planProgress } from '@/services/analytics/carePlan';
 import { Badge, DemoBadge, Disclaimer, EmptyState, ErrorBox, PageHeader, Panel, Spinner, Stat, Trend } from '@/components/UI/primitives';
 import { deg, pct, shortDate } from '@/utils/format';
 
@@ -19,6 +20,8 @@ interface Row {
   activeDays: number;
   pain: number | null;
   review: string[];
+  /** Care-plan sessions done vs prescribed this week (null = no plan). */
+  plan: number | null;
 }
 
 /** Flags are measurement-based prompts for the therapist — never diagnoses. */
@@ -42,10 +45,14 @@ async function load(user: NonNullable<ReturnType<typeof useAuth>['user']>): Prom
     const t = trends(current);
     const adh = adherence(all.slice(-10));
     const activeDays = consistency(all).active;
+    const plan = await backends.data.getCarePlan(patient.id).catch(() => null);
+    const pp = planProgress(plan, all);
+    const review = reviewFlags(current, t, adh, activeDays);
+    if (pp.behind.length) review.push(`Behind care plan: ${pp.behind.join(', ')}`);
     return {
       patient, sessions: all, latest: all[all.length - 1] ?? null,
       rom: t.rom, form: t.form, adherence: adh, activeDays, pain: painSummary(current).latest,
-      review: reviewFlags(current, t, adh, activeDays),
+      review, plan: pp.items.length ? pp.weekAdherence : null,
     };
   }));
 }
@@ -93,7 +100,7 @@ export default function TherapistDashboard() {
                   {r.review.length ? <Badge tone="signal">Review</Badge> : <Badge tone="ok">On track</Badge>}
                 </div>
                 <div className="mt-3 grid grid-cols-4 gap-2 text-center">
-                  {[['ROM', deg(r.latest?.averageRom)], ['Form', pct(r.latest?.formScore)], ['Pain', r.pain != null ? `${r.pain}/10` : '—'], ['Adh.', `${r.adherence}%`]].map(([k, v]) => (
+                  {[['ROM', deg(r.latest?.averageRom)], ['Form', pct(r.latest?.formScore)], ['Pain', r.pain != null ? `${r.pain}/10` : '—'], ['Plan', r.plan != null ? `${r.plan}%` : '—']].map(([k, v]) => (
                     <div key={k} className="rounded-lg bg-sunken/60 py-1.5"><div className="text-[10px] text-muted">{k}</div><div className="tabular text-sm font-semibold">{v}</div></div>
                   ))}
                 </div>
@@ -104,7 +111,7 @@ export default function TherapistDashboard() {
         </ul>
         <Panel className="hidden p-4 sm:p-6 md:block">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[880px] text-sm">
+            <table className="w-full min-w-[980px] text-sm">
               <thead>
                 <tr className="border-b border-line text-left text-xs text-muted">
                   <th className="py-2.5 pr-4 font-medium">Patient</th>
@@ -115,6 +122,7 @@ export default function TherapistDashboard() {
                   <th className="py-2.5 pr-4 font-medium">Form trend</th>
                   <th className="py-2.5 pr-4 text-right font-medium">Pain</th>
                   <th className="py-2.5 pr-4 text-right font-medium">Adherence</th>
+                  <th className="py-2.5 pr-4 text-right font-medium">Care plan (week)</th>
                   <th className="py-2.5 pr-4 font-medium">Last session</th>
                   <th className="py-2.5 font-medium">Status</th>
                 </tr>
@@ -133,6 +141,7 @@ export default function TherapistDashboard() {
                     <td className="py-3 pr-4"><Trend label={r.form} /></td>
                     <td className={`py-3 pr-4 text-right ${(r.pain ?? 0) >= 6 ? 'font-semibold text-alert' : ''}`}>{r.pain ?? '—'}{r.pain != null && <span className="text-xs text-muted">/10</span>}</td>
                     <td className="py-3 pr-4 text-right">{r.adherence}%</td>
+                    <td className="py-3 pr-4 text-right">{r.plan != null ? `${r.plan}%` : <span className="text-muted">No plan</span>}</td>
                     <td className="py-3 pr-4">{r.latest ? shortDate(r.latest.startedAt) : '—'}</td>
                     <td className="py-3">
                       {r.review.length
