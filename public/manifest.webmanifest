@@ -1,0 +1,29 @@
+{
+  "name": "RehabX \u2014 Rehabilitation movement monitoring",
+  "short_name": "RehabX",
+  "description": "Camera-based rehabilitation exercise monitoring: joint angles, ROM, reps and form.",
+  "start_url": "/app",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#071418",
+  "theme_color": "#0D7670",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
