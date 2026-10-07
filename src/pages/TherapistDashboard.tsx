@@ -7,6 +7,7 @@ import { adherence, byDate, consistency, painSummary } from '@/services/analytic
 import { currentExercise, trends } from '@/services/analytics/series';
 import { getExercise } from '@/services/exercise/exercises';
 import { planProgress } from '@/services/analytics/carePlan';
+import { detectAnomalies } from '@/services/analytics/predict';
 import { CATEGORY_LABEL, latest, unreadFor, urgency } from '@/services/analytics/messages';
 import type { PatientMessage } from '@/types';
 import { Badge, DemoBadge, Disclaimer, EmptyState, ErrorBox, PageHeader, Panel, Spinner, Stat, Trend } from '@/components/UI/primitives';
@@ -55,6 +56,7 @@ async function load(user: NonNullable<ReturnType<typeof useAuth>['user']>): Prom
     const pp = planProgress(plan, all);
     const review = reviewFlags(current, t, adh, activeDays);
     if (pp.behind.length) review.push(`Behind care plan: ${pp.behind.join(', ')}`);
+    for (const a of detectAnomalies(current)) review.push(`AI anomaly: ${a.message}`);
     if (unread.some((m) => m.category === 'pain')) review.unshift('Patient reported pain in a message');
     return {
       patient, sessions: all, latest: all[all.length - 1] ?? null,

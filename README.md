@@ -11,6 +11,11 @@
 - **Patient ⇄ therapist messages:** patients send text or **voice notes** (mic, up to 60 s) tagged Pain / Question / Problem; therapist replies from the patient page. Unread/seen status, pain messages raise a review flag.
 - **Therapist inbox + patient page:** "New messages from patients" on the dashboard (pain first); click a patient name to see full details (age, diagnosis, side, injury date, rehab week, goal, contacts), messages, care plan, charts and notes.
 - New `patient_messages` table + `patients.profile` column with RLS (schema v4).
+- **AI / ML additions (AI/ML vertical):**
+  - **Recovery forecast:** least-squares linear regression of ROM over time → ROM trend (°/week), predicted ROM in 14 days, estimated date the therapist’s ROM goal is reached, with R² and a confidence level (`src/services/analytics/predict.ts`).
+  - **Anomaly detection:** z-score of the latest session against the patient’s own baseline (ROM, form) + pain-spike check → “AI anomaly” review flag for the therapist.
+  - **Live AI telemetry** on the exercise screen: frames/s, model inference time, GPU/CPU delegate, pose confidence, people in frame, exercise-match check.
+  - Tests: `tests/predict.test.ts`.
 - Renamed RehabX → **NavGati**. Demo patients: Aarav Sharma, Priya Nair, Arjun Mehta, Kavya Reddy (fictional).
 
 **Built before the event (existing base):** camera pose tracking (MediaPipe), rep counting, ROM, form feedback, patient/therapist dashboards, notes.

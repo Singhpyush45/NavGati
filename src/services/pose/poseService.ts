@@ -15,6 +15,10 @@ export class PoseService {
   private loading: Promise<void> | null = null;
   private lastVideoTime = -1;
   private lastFrame: PoseFrame | null = null;
+  /** Which hardware the model runs on (GPU via WebGL, or CPU fallback). */
+  delegate: 'GPU' | 'CPU' | null = null;
+  /** Smoothed model inference time per frame, in milliseconds. */
+  inferenceMs = 0;
 
   async init(): Promise<void> {
     if (this.landmarker) return;
@@ -34,8 +38,10 @@ export class PoseService {
         });
       try {
         this.landmarker = await make('GPU');
+        this.delegate = 'GPU';
       } catch {
         this.landmarker = await make('CPU');
+        this.delegate = 'CPU';
       }
     })();
     try {
@@ -53,7 +59,10 @@ export class PoseService {
     if (!this.landmarker || video.readyState < 2 || video.videoWidth === 0) return null;
     if (video.currentTime === this.lastVideoTime && this.lastFrame) return null;
     this.lastVideoTime = video.currentTime;
+    const t0 = performance.now();
     const res = this.landmarker.detectForVideo(video, timestamp);
+    const dt = performance.now() - t0;
+    this.inferenceMs = this.inferenceMs ? this.inferenceMs + 0.1 * (dt - this.inferenceMs) : dt;
     const poses = res.landmarks ?? [];
     const frame: PoseFrame = {
       landmarks: poses[0] ? poses[0].map((l) => ({ x: l.x, y: l.y, z: l.z, visibility: l.visibility })) : null,

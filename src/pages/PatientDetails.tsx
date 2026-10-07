@@ -7,6 +7,7 @@ import { adherence, aggregateDeviations, byDate, consistency, painSummary } from
 import { TherapistNotes } from '@/components/Dashboard/TherapistNotes';
 import { CarePlanEditor } from '@/components/CarePlan/CarePlanEditor';
 import { PatientProfileCard } from '@/components/Dashboard/PatientProfileCard';
+import { AiInsights } from '@/components/Dashboard/AiInsights';
 import { MessageThread } from '@/components/Messages/MessageThread';
 import { unreadFor } from '@/services/analytics/messages';
 import { CarePlanProgress } from '@/components/CarePlan/CarePlanProgress';
@@ -102,6 +103,16 @@ export default function PatientDetails() {
           <div><h3 className="mb-3 text-sm font-medium text-muted">Edit plan</h3><CarePlanEditor patientId={patient.id} author={user!} initial={activePlan} onSaved={setPlan} /></div>
         </div>
       </Panel>
+
+      {sessions.length > 0 && (
+        <Panel className="p-6">
+          <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="font-semibold">AI insights · {ex?.name ?? 'current exercise'}</h2>
+            <span className="text-xs text-muted">Recovery forecast + anomaly detection, computed on-device</span>
+          </div>
+          <AiInsights sessions={current} goal={activePlan?.items.find((i) => i.exerciseId === exId)?.targetRom ?? null} exerciseName={ex?.name} />
+        </Panel>
+      )}
 
       {!sessions.length ? (
         <EmptyState title="No sessions recorded" body="Sessions will appear once this patient completes an exercise." />

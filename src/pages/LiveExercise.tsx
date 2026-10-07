@@ -10,6 +10,7 @@ import { buildSessionRecord } from '@/services/analytics/sessionBuilder';
 import { formatDuration } from '@/services/analytics/trends';
 import { backends } from '@/services/database';
 import { usePoseStream } from '@/hooks/usePoseStream';
+import { getPoseService } from '@/services/pose/poseService';
 import { PoseStage } from '@/components/Camera/PoseStage';
 import { FeedbackList } from '@/components/Feedback/FeedbackList';
 import { Badge, Disclaimer, EmptyState, Panel } from '@/components/UI/primitives';
@@ -105,12 +106,20 @@ function LiveSession({ exerciseId, side, targetReps, mode, facing, patientId, on
   const [confetti, setConfetti] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
   const lastRep = useRef(0);
+  // On-device AI telemetry for the "AI model" panel (updated per frame, read on re-render).
+  const ai = useRef({ fps: 0, lastT: 0, people: 0, confidence: 0 });
   const prefs = getPrefs();
 
   // ── Per-frame work (called from requestAnimationFrame, NOT from React) ──
   const onFrame = useCallback((frame: PoseFrame) => {
     const r = engine.analyze(frame);
     latest.current = r;
+    const a = ai.current;
+    if (a.lastT && frame.timestamp > a.lastT) {
+      const inst = 1000 / (frame.timestamp - a.lastT);
+      a.fps = a.fps ? a.fps + 0.1 * (inst - a.fps) : inst;
+    }
+    a.lastT = frame.timestamp; a.people = frame.numPoses; a.confidence = r.confidence.score;
     if (startedAt.current === null && r.confidence.ok) startedAt.current = Date.now();
     shownFeedback.current = stabilizer.current.update(r.feedback, performance.now());
     const s = r.side;
@@ -345,6 +354,25 @@ function LiveSession({ exerciseId, side, targetReps, mode, facing, patientId, on
                 </div>
               ))}
             </dl>
+
+            {/* On-device AI model telemetry — shows judges / therapists what the model is doing live. */}
+            <div className="mt-4 rounded-xl border border-line/60 bg-sunken/40 p-3 text-xs">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="font-semibold text-ink">AI model · on-device</span>
+                <span className="text-muted">{mode === 'demo' ? 'Demo simulator' : `MediaPipe Pose (lite) · ${getPoseService().delegate ?? '…'}`}</span>
+              </div>
+              <div className="grid grid-cols-4 gap-2 text-center">
+                {[
+                  ['Frames/s', ai.current.fps ? Math.round(ai.current.fps) : '—'],
+                  ['Inference', mode === 'demo' ? '—' : getPoseService().inferenceMs ? `${Math.round(getPoseService().inferenceMs)} ms` : '—'],
+                  ['Confidence', r ? `${Math.round((ai.current.confidence || 0) * 100)}%` : '—'],
+                  ['People', r ? ai.current.people : '—'],
+                ].map(([k, v]) => (
+                  <div key={k as string}><div className="text-muted">{k}</div><div className={`tabular text-sm font-semibold ${k === 'People' && ai.current.people > 1 ? 'text-alert' : 'text-ink'}`}>{v}</div></div>
+                ))}
+              </div>
+              <div className="mt-2 text-muted">Exercise check: {r ? (r.exerciseMatch === 'match' ? '✓ matches prescribed exercise' : r.exerciseMatch === 'mismatch' ? '⚠ different movement detected' : 'analysing…') : '—'} · No video leaves this device.</div>
+            </div>
           </Panel>
 
           <Panel className="p-5">

@@ -15,6 +15,7 @@ import { getPrefs } from '@/utils/prefs';
 import { CarePlanProgress } from '@/components/CarePlan/CarePlanProgress';
 import { planProgress, startLink } from '@/services/analytics/carePlan';
 import { unreadFor } from '@/services/analytics/messages';
+import { forecastRom } from '@/services/analytics/predict';
 import { deg, pct, shortDate } from '@/utils/format';
 
 function greeting() {
@@ -41,7 +42,8 @@ export default function PatientDashboard() {
   const newReplies = unreadFor(data?.messages ?? [], 'PATIENT').length;
   const todayKey = dayKey(new Date());
   const todays = all.filter((s) => dayKey(s.startedAt) === todayKey);
-  const latest = todays[todays.length - 1] ?? null;
+  const todaysEx = todays.filter((s) => s.exerciseId === exId);
+  const latest = todaysEx[todaysEx.length - 1] ?? null;
   const progress = planProgress(data?.plan ?? null, all);
   const next = progress.nextUp;
   // The care plan decides today's exercise; without a plan, fall back to the last exercise done.
@@ -57,6 +59,8 @@ export default function PatientDashboard() {
   const target = next?.targetReps ?? getPrefs().defaultTargetReps;
   const startHref = next ? startLink(next) : `/setup?exercise=${exId}`;
   const planDone = progress.items.length > 0 && !next;
+  const goal = data?.plan?.items.find((i) => i.exerciseId === exId)?.targetRom ?? null;
+  const forecast = forecastRom(exSessions, goal);
 
   return (
     <div className="space-y-6">
@@ -119,6 +123,11 @@ export default function PatientDashboard() {
           <div className="font-semibold">{newReplies ? `${newReplies} new message${newReplies > 1 ? 's' : ''} from your therapist` : 'Something bothering you?'}</div>
           <p className="text-sm text-muted">Send your therapist a message or a voice note about pain, a question or a problem.</p>
         </div>
+        {forecast.goalDate && (
+          <div className="w-full rounded-xl bg-tideSoft/60 px-4 py-2 text-sm sm:order-first">
+            📈 At your current pace (+{forecast.perWeek}°/week) you could reach your {goal}° goal around <b>{shortDate(forecast.goalDate)}</b>. Keep going!
+          </div>
+        )}
         <Link to="/messages" className="btn-primary">{newReplies ? 'Read messages' : 'Message therapist'}</Link>
       </Panel>
 
