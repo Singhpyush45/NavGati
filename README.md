@@ -8,11 +8,14 @@
 - **Therapist view:** care-plan adherence column on the patient list + "Behind care plan" review flag.
 - **Security:** new `care_plans` table with Row Level Security (patients read own plan; only assigned therapists can write). See `supabase/schema.sql` (v3).
 - **Tests:** `tests/carePlan.test.ts` (weekly progress, validation, role check).
-- Renamed RehabX → **NavGati**.
+- **Patient ⇄ therapist messages:** patients send text or **voice notes** (mic, up to 60 s) tagged Pain / Question / Problem; therapist replies from the patient page. Unread/seen status, pain messages raise a review flag.
+- **Therapist inbox + patient page:** "New messages from patients" on the dashboard (pain first); click a patient name to see full details (age, diagnosis, side, injury date, rehab week, goal, contacts), messages, care plan, charts and notes.
+- New `patient_messages` table + `patients.profile` column with RLS (schema v4).
+- Renamed RehabX → **NavGati**. Demo patients: Aarav Sharma, Priya Nair, Arjun Mehta, Kavya Reddy (fictional).
 
 **Built before the event (existing base):** camera pose tracking (MediaPipe), rep counting, ROM, form feedback, patient/therapist dashboards, notes.
 
-**Demo logins (local mode):** `patient@navgati.demo` / `therapist@navgati.demo`, password `demo1234`.
+**Demo logins (local mode):** patient `patient@navgati.demo` (Aarav Sharma) / therapist `therapist@navgati.demo` (Dr. Neha Kapoor), password `demo1234`.
 
 
 **AI-powered rehabilitation & recovery platform — prototype**
