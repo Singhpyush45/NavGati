@@ -14,6 +14,7 @@ import { getExercise } from '@/services/exercise/exercises';
 import { getPrefs } from '@/utils/prefs';
 import { CarePlanProgress } from '@/components/CarePlan/CarePlanProgress';
 import { planProgress, startLink } from '@/services/analytics/carePlan';
+import { unreadFor } from '@/services/analytics/messages';
 import { deg, pct, shortDate } from '@/utils/format';
 
 function greeting() {
@@ -24,18 +25,20 @@ function greeting() {
 export default function PatientDashboard() {
   const { user } = useAuth();
   const { data, error, loading, retry } = useAsync(async () => {
-    const [sessions, notes, plan] = await Promise.all([
+    const [sessions, notes, plan, messages] = await Promise.all([
       backends.data.listSessions(user!.id),
       backends.data.listNotes(user!.id).catch(() => []),
       backends.data.getCarePlan(user!.id).catch(() => null),
+      backends.data.listMessages(user!.id).catch(() => []),
     ]);
-    return { sessions, notes, plan };
+    return { sessions, notes, plan, messages };
   }, [user?.id]);
 
   if (loading) return <Spinner label="Loading your sessions…" />;
   if (error) return <ErrorBox message={error} onRetry={retry} />;
   const all = [...(data?.sessions ?? [])].sort(byDate);
   const note = data?.notes[0];
+  const newReplies = unreadFor(data?.messages ?? [], 'PATIENT').length;
   const todayKey = dayKey(new Date());
   const todays = all.filter((s) => dayKey(s.startedAt) === todayKey);
   const latest = todays[todays.length - 1] ?? null;
@@ -110,6 +113,14 @@ export default function PatientDashboard() {
           </div>
         </Panel>
       )}
+
+      <Panel className="flex flex-wrap items-center justify-between gap-4 p-5">
+        <div>
+          <div className="font-semibold">{newReplies ? `${newReplies} new message${newReplies > 1 ? 's' : ''} from your therapist` : 'Something bothering you?'}</div>
+          <p className="text-sm text-muted">Send your therapist a message or a voice note about pain, a question or a problem.</p>
+        </div>
+        <Link to="/messages" className="btn-primary">{newReplies ? 'Read messages' : 'Message therapist'}</Link>
+      </Panel>
 
       {progress.items.length > 0 && (
         <Panel className="p-6">

@@ -234,6 +234,24 @@ export interface PatientSummary {
   condition?: string;
   therapistId?: string;
   isDemo: boolean;
+  /** Extra details shown to the therapist (all optional). */
+  profile?: PatientProfile;
+}
+
+/** Patient background shown on the therapist's patient page. */
+export interface PatientProfile {
+  age?: number;
+  gender?: 'Male' | 'Female' | 'Other';
+  phone?: string;
+  city?: string;
+  diagnosis?: string;
+  affectedSide?: Side;
+  /** ISO date of injury / surgery. */
+  injuryDate?: string;
+  /** ISO date the rehab programme started. */
+  programStart?: string;
+  goal?: string;
+  emergencyContact?: string;
 }
 
 export interface SessionRecord {
@@ -301,4 +319,30 @@ export interface CarePlan {
   updatedAt: string;
   updatedById: string;
   updatedByName: string;
+}
+
+// ─────────────── Patient ⇄ therapist messages (built on-site at ReThink Hackathon 2026) ───────────────
+
+export type MessageCategory = 'general' | 'pain' | 'question' | 'problem';
+
+export interface VoiceClip {
+  /** base64 data URL (audio/webm or audio/mp4 depending on the browser). */
+  dataUrl: string;
+  durationSec: number;
+  mime: string;
+}
+
+export interface PatientMessage {
+  id: string;
+  patientId: string;
+  senderRole: 'PATIENT' | 'THERAPIST';
+  senderId: string;
+  senderName: string;
+  category: MessageCategory;
+  /** Text part (may be empty when the message is voice only). */
+  body: string;
+  audio?: VoiceClip | null;
+  createdAt: string;
+  /** Set when the other side has opened the conversation. */
+  readAt?: string | null;
 }

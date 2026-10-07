@@ -16,6 +16,7 @@ import Progress from '@/pages/Progress';
 import PatientDetails from '@/pages/PatientDetails';
 import SessionHistory from '@/pages/SessionHistory';
 import Settings from '@/pages/Settings';
+import Messages from '@/pages/Messages';
 
 /** Route guard: must be signed in, and (optionally) have one of the allowed roles. */
 function RequireAuth({ roles, children }: { roles?: Role[]; children: ReactNode }) {
@@ -42,6 +43,7 @@ export default function App() {
         <Route path="/history" element={<RequireAuth roles={PATIENT}><SessionHistory /></RequireAuth>} />
         <Route path="/setup" element={<RequireAuth roles={PATIENT}><CameraSetup /></RequireAuth>} />
         <Route path="/live" element={<RequireAuth roles={PATIENT}><LiveExercise /></RequireAuth>} />
+        <Route path="/messages" element={<RequireAuth roles={PATIENT}><Messages /></RequireAuth>} />
         {/* Therapist / admin */}
         <Route path="/therapist" element={<RequireAuth roles={STAFF}><TherapistDashboard /></RequireAuth>} />
         <Route path="/therapist/patients/:id" element={<RequireAuth roles={STAFF}><PatientDetails /></RequireAuth>} />

@@ -45,7 +45,7 @@ export function CarePlanEditor({ patientId, author, initial, onSaved }: {
       <ul className="space-y-3">
         {items.map((it, i) => (
           <li key={i} className="rounded-xl border border-line/60 p-3">
-            <div className="grid gap-3 sm:grid-cols-[1.6fr_1fr_0.8fr_0.8fr_0.9fr_auto] sm:items-end">
+            <div className="grid gap-3 sm:grid-cols-[minmax(150px,1.6fr)_minmax(80px,1fr)_minmax(70px,0.8fr)_minmax(70px,0.8fr)_minmax(80px,0.9fr)_auto] sm:items-end">
               <label className="text-xs text-muted">Exercise
                 <select className="field mt-1" value={it.exerciseId} onChange={(e) => update(i, { exerciseId: e.target.value })}>
                   {SUPPORTED.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}

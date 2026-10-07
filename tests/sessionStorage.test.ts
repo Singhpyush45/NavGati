@@ -43,7 +43,7 @@ describe('local auth & roles', () => {
 
     const patient = await auth.signIn(DEMO_ACCOUNTS[0].email, DEMO_ACCOUNTS[0].password);
     expect((await db.listPatients(patient)).map((p) => p.id)).toEqual(['p001']);
-    expect((await db.listPatients(therapist)).length).toBe(3);
+    expect((await db.listPatients(therapist)).length).toBe(4);
   });
 });
 

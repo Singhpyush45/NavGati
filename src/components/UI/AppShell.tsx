@@ -10,6 +10,7 @@ const PATIENT_NAV = [
   { to: '/exercises', label: 'Exercises', icon: 'M6 20l6-14 6 10M4 20h16' },
   { to: '/progress', label: 'Progress', icon: 'M4 18l5-6 4 3 7-9' },
   { to: '/history', label: 'History', icon: 'M12 7v5l3 2M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
+  { to: '/messages', label: 'Messages', icon: 'M4 5h16v11H8l-4 4V5z' },
   { to: '/settings', label: 'Settings', icon: 'M12 15a3 3 0 100-6 3 3 0 000 6zM19 12h2M3 12h2M12 3v2M12 19v2' },
 ];
 const THERAPIST_NAV = [

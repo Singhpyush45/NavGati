@@ -7,6 +7,8 @@ import { adherence, byDate, consistency, painSummary } from '@/services/analytic
 import { currentExercise, trends } from '@/services/analytics/series';
 import { getExercise } from '@/services/exercise/exercises';
 import { planProgress } from '@/services/analytics/carePlan';
+import { CATEGORY_LABEL, latest, unreadFor, urgency } from '@/services/analytics/messages';
+import type { PatientMessage } from '@/types';
 import { Badge, DemoBadge, Disclaimer, EmptyState, ErrorBox, PageHeader, Panel, Spinner, Stat, Trend } from '@/components/UI/primitives';
 import { deg, pct, shortDate } from '@/utils/format';
 
@@ -22,6 +24,8 @@ interface Row {
   review: string[];
   /** Care-plan sessions done vs prescribed this week (null = no plan). */
   plan: number | null;
+  messages: PatientMessage[];
+  unread: number;
 }
 
 /** Flags are measurement-based prompts for the therapist — never diagnoses. */
@@ -46,13 +50,16 @@ async function load(user: NonNullable<ReturnType<typeof useAuth>['user']>): Prom
     const adh = adherence(all.slice(-10));
     const activeDays = consistency(all).active;
     const plan = await backends.data.getCarePlan(patient.id).catch(() => null);
+    const messages = await backends.data.listMessages(patient.id).catch(() => [] as PatientMessage[]);
+    const unread = unreadFor(messages, 'THERAPIST');
     const pp = planProgress(plan, all);
     const review = reviewFlags(current, t, adh, activeDays);
     if (pp.behind.length) review.push(`Behind care plan: ${pp.behind.join(', ')}`);
+    if (unread.some((m) => m.category === 'pain')) review.unshift('Patient reported pain in a message');
     return {
       patient, sessions: all, latest: all[all.length - 1] ?? null,
       rom: t.rom, form: t.form, adherence: adh, activeDays, pain: painSummary(current).latest,
-      review, plan: pp.items.length ? pp.weekAdherence : null,
+      review, plan: pp.items.length ? pp.weekAdherence : null, messages, unread: unread.length,
     };
   }));
 }
@@ -63,7 +70,9 @@ export default function TherapistDashboard() {
 
   if (loading) return <Spinner label="Loading patients…" />;
   if (error) return <ErrorBox message={error} onRetry={retry} />;
-  const rows = data ?? [];
+  // Patients with unread pain messages first, then unread messages, then needs-review.
+  const rows = [...(data ?? [])].sort((a, b) => urgency(b.messages) - urgency(a.messages) || b.review.length - a.review.length);
+  const unreadTotal = rows.reduce((n, r) => n + r.unread, 0);
   const totalSessions = rows.reduce((s, r) => s + r.sessions.length, 0);
   const week = rows.reduce((s, r) => s + r.sessions.filter((x) => Date.now() - Date.parse(x.startedAt) < 7 * 864e5).length, 0);
   const needReview = rows.filter((r) => r.review.length).length;
@@ -83,6 +92,31 @@ export default function TherapistDashboard() {
         <Stat label="Requires therapist review" value={needReview} />
       </Panel>
 
+      {unreadTotal > 0 && (
+        <Panel className="p-6">
+          <h2 className="font-semibold">New messages from patients <span className="ml-1 rounded-full bg-alert/10 px-2 py-0.5 text-xs text-alert">{unreadTotal}</span></h2>
+          <ul className="mt-4 divide-y divide-line/70">
+            {rows.filter((r) => r.unread).map((r) => {
+              const m = latest(unreadFor(r.messages, 'THERAPIST'))!;
+              return (
+                <li key={r.patient.id}>
+                  <Link to={`/therapist/patients/${r.patient.id}`} className="flex items-start gap-3 py-3 hover:bg-sunken/50">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-tide to-violet text-xs font-semibold text-white" aria-hidden="true">{r.patient.name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2 text-sm"><span className="font-medium">{r.patient.name}</span>
+                        <Badge tone={m.category === 'pain' ? 'alert' : m.category === 'problem' ? 'signal' : 'tide'}>{CATEGORY_LABEL[m.category]}</Badge>
+                        <span className="text-xs text-muted">{shortDate(m.createdAt)}</span></div>
+                      <p className="mt-0.5 truncate text-sm text-muted">{m.audio ? '🎙 Voice note' + (m.body ? ' · ' : '') : ''}{m.body}</p>
+                    </div>
+                    <span className="tabular text-xs text-muted">{r.unread} new →</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </Panel>
+      )}
+
       {rows.length === 0 ? (
         <EmptyState title="No assigned patients" body="Patients assigned to you will appear here with their measured trends." />
       ) : (
@@ -94,8 +128,8 @@ export default function TherapistDashboard() {
               <Link to={`/therapist/patients/${r.patient.id}`} className="panel panel-hover block p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="font-semibold text-tide">{r.patient.patientCode}</div>
-                    <div className="text-xs text-muted">{r.patient.name} · {getExercise(r.latest?.exerciseId)?.name ?? '—'}</div>
+                    <div className="font-semibold text-tide">{r.patient.name}{r.unread > 0 && <span className="ml-2 rounded-full bg-alert/10 px-1.5 py-0.5 text-[10px] text-alert">{r.unread} msg</span>}</div>
+                    <div className="text-xs text-muted">{r.patient.patientCode} · {getExercise(r.latest?.exerciseId)?.name ?? '—'}</div>
                   </div>
                   {r.review.length ? <Badge tone="signal">Review</Badge> : <Badge tone="ok">On track</Badge>}
                 </div>
@@ -114,7 +148,7 @@ export default function TherapistDashboard() {
             <table className="w-full min-w-[980px] text-sm">
               <thead>
                 <tr className="border-b border-line text-left text-xs text-muted">
-                  <th className="py-2.5 pr-4 font-medium">Patient</th>
+                  <th className="py-2.5 pr-4 font-medium">Patient (click for details)</th>
                   <th className="py-2.5 pr-4 font-medium">Current exercise</th>
                   <th className="py-2.5 pr-4 text-right font-medium">Latest ROM</th>
                   <th className="py-2.5 pr-4 text-right font-medium">Latest form</th>
@@ -131,8 +165,9 @@ export default function TherapistDashboard() {
                 {rows.map((r) => (
                   <tr key={r.patient.id} className="border-b border-line/70 last:border-0 hover:bg-sunken/60">
                     <td className="py-3 pr-4">
-                      <Link to={`/therapist/patients/${r.patient.id}`} className="font-medium text-tide hover:underline">{r.patient.patientCode}</Link>
-                      <div className="text-xs text-muted">{r.patient.name}</div>
+                      <Link to={`/therapist/patients/${r.patient.id}`} className="font-medium text-tide hover:underline">{r.patient.name}</Link>
+                      {r.unread > 0 && <span className="ml-2 rounded-full bg-alert/10 px-1.5 py-0.5 text-[10px] font-semibold text-alert">{r.unread} msg</span>}
+                      <div className="text-xs text-muted">{r.patient.patientCode}{r.patient.profile?.age ? ` · ${r.patient.profile.age} yrs` : ''}{r.patient.condition ? ` · ${r.patient.condition}` : ''}</div>
                     </td>
                     <td className="py-3 pr-4">{getExercise(r.latest?.exerciseId)?.name ?? '—'}</td>
                     <td className="py-3 pr-4 text-right">{deg(r.latest?.averageRom)}</td>

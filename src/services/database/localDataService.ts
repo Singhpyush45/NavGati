@@ -1,8 +1,9 @@
-import type { AppUser, CarePlan, PatientSummary, Role, SessionFeedback, SessionRecord, TherapistNote } from '@/types';
+import type { AppUser, CarePlan, PatientMessage, PatientSummary, Role, SessionFeedback, SessionRecord, TherapistNote } from '@/types';
 import { validateCarePlan } from '@/services/analytics/carePlan';
 import type { AuthService, DataService } from './types';
 import { DataError } from './types';
-import { DEMO_CARE_PLANS, DEMO_NOTES, DEMO_PATIENTS, DEMO_THERAPIST_ID, generateDemoSessions } from './demoSeed';
+import { DEMO_CARE_PLANS, DEMO_MESSAGES, DEMO_NOTES, DEMO_PATIENTS, DEMO_THERAPIST_ID, DEMO_THERAPIST_NAME, generateDemoSessions } from './demoSeed';
+import { validateMessage } from '@/services/analytics/messages';
 import { hashPassword, verifyPassword } from './passwords';
 
 /** Minimal Storage interface so tests can inject an in-memory store. */
@@ -26,7 +27,8 @@ const K = {
   current: 'navgati:current-user',
   notes: 'navgati:notes',
   plans: 'navgati:care-plans',
-  seeded: 'navgati:seeded-v3',
+  messages: 'navgati:messages',
+  seeded: 'navgati:seeded-v4',
 };
 
 function read<T>(store: KeyValueStore, key: string, fallback: T): T {
@@ -57,6 +59,7 @@ export class LocalDataService implements DataService {
     write(this.store, K.sessions, generateDemoSessions());
     write(this.store, K.notes, DEMO_NOTES);
     write(this.store, K.plans, DEMO_CARE_PLANS);
+    write(this.store, K.messages, DEMO_MESSAGES);
     this.store.setItem(K.seeded, '1');
   }
 
@@ -117,6 +120,23 @@ export class LocalDataService implements DataService {
     write(this.store, K.plans, { ...all, [plan.patientId]: saved });
     return saved;
   }
+  async listMessages(patientId: string) {
+    return read<PatientMessage[]>(this.store, K.messages, [])
+      .filter((m) => m.patientId === patientId)
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  }
+  async sendMessage(m: Omit<PatientMessage, 'id' | 'createdAt' | 'readAt'>) {
+    const problem = validateMessage(m);
+    if (problem) throw new DataError('unknown', problem);
+    const msg: PatientMessage = { ...m, body: m.body.trim(), id: crypto.randomUUID(), createdAt: new Date().toISOString(), readAt: null };
+    write(this.store, K.messages, [...read<PatientMessage[]>(this.store, K.messages, []), msg]);
+    return msg;
+  }
+  async markMessagesRead(patientId: string, readerRole: 'PATIENT' | 'THERAPIST') {
+    const now = new Date().toISOString();
+    const all = read<PatientMessage[]>(this.store, K.messages, []);
+    write(this.store, K.messages, all.map((m) => (m.patientId === patientId && m.senderRole !== readerRole && !m.readAt ? { ...m, readAt: now } : m)));
+  }
   /** Used by local auth when a new patient registers. */
   addPatient(p: PatientSummary) {
     const all = read<PatientSummary[]>(this.store, K.patients, []);
@@ -142,10 +162,17 @@ export class LocalAuthService implements AuthService {
 
   private async seedUsers() {
     const users = read<StoredUser[]>(this.store, K.users, []);
-    if (users.some((u) => u.email === DEMO_ACCOUNTS[0].email)) return;
+    const demoNames: Record<string, string> = { [DEMO_ACCOUNTS[0].email]: DEMO_PATIENTS[0].name, [DEMO_ACCOUNTS[1].email]: DEMO_THERAPIST_NAME };
+    if (users.some((u) => u.email === DEMO_ACCOUNTS[0].email)) {
+      // Keep demo account names in sync with the current demo seed.
+      write(this.store, K.users, users.map((u) => (demoNames[u.email] ? { ...u, name: demoNames[u.email] } : u)));
+      const cur = read<AppUser | null>(this.store, K.current, null);
+      if (cur && demoNames[cur.email]) write(this.store, K.current, { ...cur, name: demoNames[cur.email] });
+      return;
+    }
     const seeded: StoredUser[] = [
-      { id: 'p001', email: DEMO_ACCOUNTS[0].email, name: 'Demo Patient A', role: 'PATIENT', patientCode: 'P001', passwordHash: await hashPassword(DEMO_ACCOUNTS[0].password) },
-      { id: DEMO_THERAPIST_ID, email: DEMO_ACCOUNTS[1].email, name: 'Demo Therapist', role: 'THERAPIST', passwordHash: await hashPassword(DEMO_ACCOUNTS[1].password) },
+      { id: 'p001', email: DEMO_ACCOUNTS[0].email, name: DEMO_PATIENTS[0].name, role: 'PATIENT', patientCode: 'P001', passwordHash: await hashPassword(DEMO_ACCOUNTS[0].password) },
+      { id: DEMO_THERAPIST_ID, email: DEMO_ACCOUNTS[1].email, name: DEMO_THERAPIST_NAME, role: 'THERAPIST', passwordHash: await hashPassword(DEMO_ACCOUNTS[1].password) },
     ];
     write(this.store, K.users, [...users, ...seeded]);
   }

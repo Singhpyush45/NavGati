@@ -6,6 +6,9 @@ import { backends } from '@/services/database';
 import { adherence, aggregateDeviations, byDate, consistency, painSummary } from '@/services/analytics/trends';
 import { TherapistNotes } from '@/components/Dashboard/TherapistNotes';
 import { CarePlanEditor } from '@/components/CarePlan/CarePlanEditor';
+import { PatientProfileCard } from '@/components/Dashboard/PatientProfileCard';
+import { MessageThread } from '@/components/Messages/MessageThread';
+import { unreadFor } from '@/services/analytics/messages';
 import { CarePlanProgress } from '@/components/CarePlan/CarePlanProgress';
 import { planProgress } from '@/services/analytics/carePlan';
 import type { CarePlan } from '@/types';
@@ -29,7 +32,8 @@ export default function PatientDetails() {
     const sessions = patient ? (await backends.data.listSessions(patient.id)).sort(byDate) : [];
     const notes = patient ? await backends.data.listNotes(patient.id).catch(() => []) : [];
     const carePlan = patient ? await backends.data.getCarePlan(patient.id).catch(() => null) : null;
-    return { patient, sessions, notes, carePlan };
+    const messages = patient ? await backends.data.listMessages(patient.id).catch(() => []) : [];
+    return { patient, sessions, notes, carePlan, messages };
   }, [id, user?.id]);
 
   if (loading) return <Spinner label="Loading patient…" />;
@@ -53,8 +57,8 @@ export default function PatientDetails() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={`Patient ${patient.patientCode}`}
-        subtitle={<span className="inline-flex flex-wrap items-center gap-2">{patient.name}{patient.condition ? ` · ${patient.condition}` : ''} {patient.isDemo && <DemoBadge label="Synthetic demo patient" />}</span>}
+        title={patient.name}
+        subtitle={<span className="inline-flex flex-wrap items-center gap-2">{patient.patientCode}{patient.condition ? ` · ${patient.condition}` : ''} {patient.isDemo && <DemoBadge label="Synthetic demo patient" />}</span>}
         actions={<>
           {exIds.length > 1 && (
             <select aria-label="Exercise" className="field !w-auto" value={exId ?? ''} onChange={(e) => setPicked(e.target.value)}>
@@ -66,6 +70,25 @@ export default function PatientDetails() {
         </>}
       />
 
+      <div className="grid gap-6 lg:grid-cols-[1fr_1.15fr]">
+        <Panel className="p-6">
+          <h2 className="mb-4 font-semibold">Patient details</h2>
+          <PatientProfileCard patient={patient} />
+          <div className="mt-5 grid grid-cols-3 gap-3 border-t border-line pt-4 text-center">
+            <div><div className="text-xs text-muted">Sessions</div><div className="tabular text-xl font-semibold">{sessions.length}</div></div>
+            <div><div className="text-xs text-muted">Pain (latest)</div><div className="tabular text-xl font-semibold">{pain.latest ?? '—'}<span className="text-xs text-muted">/10</span></div></div>
+            <div><div className="text-xs text-muted">Care plan</div><div className="tabular text-xl font-semibold">{progress.items.length ? `${progress.weekAdherence}%` : '—'}</div></div>
+          </div>
+        </Panel>
+        <Panel className="p-6">
+          <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="font-semibold">Messages with {patient.name.split(' ')[0]}</h2>
+            <span className="text-xs text-muted">{unreadFor(data.messages, 'THERAPIST').length ? `${unreadFor(data.messages, 'THERAPIST').length} new` : 'Text + voice notes'}</span>
+          </div>
+          <MessageThread patientId={patient.id} me={user!} initial={data.messages} height={340} />
+        </Panel>
+      </div>
+
       <Panel className="p-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -74,7 +97,7 @@ export default function PatientDetails() {
           </div>
           {progress.behind.length > 0 && <span className="rounded-full bg-signal/15 px-2.5 py-0.5 text-xs font-medium text-signal">Behind: {progress.behind.join(', ')}</span>}
         </div>
-        <div className="mt-5 grid gap-6 lg:grid-cols-2">
+        <div className="mt-5 grid gap-6 xl:grid-cols-[1fr_1.4fr]">
           <div><h3 className="mb-3 text-sm font-medium text-muted">This week</h3><CarePlanProgress progress={progress} mode="therapist" /></div>
           <div><h3 className="mb-3 text-sm font-medium text-muted">Edit plan</h3><CarePlanEditor patientId={patient.id} author={user!} initial={activePlan} onSaved={setPlan} /></div>
         </div>

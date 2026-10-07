@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import type { AppUser, CarePlan, PatientSummary, Role, SessionFeedback, SessionRecord, TherapistNote } from '@/types';
+import type { AppUser, CarePlan, PatientMessage, PatientProfile, PatientSummary, Role, SessionFeedback, SessionRecord, TherapistNote } from '@/types';
 import { validateCarePlan } from '@/services/analytics/carePlan';
+import { validateMessage } from '@/services/analytics/messages';
 import type { AuthService, DataService } from './types';
 import { DataError } from './types';
 
@@ -39,6 +40,15 @@ const fromRow = (r: SessionRow): SessionRecord => ({
   formScore: r.form_score, movementQuality: r.movement_quality, deviations: r.deviations ?? [],
   status: r.status, mode: r.mode, isDemoData: r.is_demo_data, reps: r.reps ?? [], events: r.events ?? [],
   painBefore: r.pain_before ?? null, painAfter: r.pain_after ?? null, difficulty: r.difficulty ?? null, patientNote: r.patient_note ?? null,
+});
+
+type MessageRow = {
+  id: string; patient_id: string; sender_role: PatientMessage['senderRole']; sender_id: string; sender_name: string;
+  category: PatientMessage['category']; body: string; audio: PatientMessage['audio']; created_at: string; read_at: string | null;
+};
+const fromMessageRow = (r: MessageRow): PatientMessage => ({
+  id: r.id, patientId: r.patient_id, senderRole: r.sender_role, senderId: r.sender_id, senderName: r.sender_name,
+  category: r.category, body: r.body ?? '', audio: r.audio ?? null, createdAt: r.created_at, readAt: r.read_at,
 });
 
 export class SupabaseDataService implements DataService {
@@ -121,6 +131,29 @@ export class SupabaseDataService implements DataService {
     return { ...plan, updatedAt: (data as { updated_at: string }).updated_at };
   }
 
+  async listMessages(patientId: string) {
+    const { data, error } = await this.sb.from('patient_messages').select('*').eq('patient_id', patientId).order('created_at');
+    if (error) throw toDataError(error);
+    return (data as MessageRow[]).map(fromMessageRow);
+  }
+
+  async sendMessage(m: Omit<PatientMessage, 'id' | 'createdAt' | 'readAt'>) {
+    const problem = validateMessage(m);
+    if (problem) throw new DataError('unknown', problem);
+    const { data, error } = await this.sb.from('patient_messages').insert({
+      patient_id: m.patientId, sender_role: m.senderRole, sender_id: m.senderId, sender_name: m.senderName,
+      category: m.category, body: m.body.trim(), audio: m.audio ?? null,
+    }).select().single();
+    if (error) throw toDataError(error);
+    return fromMessageRow(data as MessageRow);
+  }
+
+  async markMessagesRead(patientId: string, readerRole: 'PATIENT' | 'THERAPIST') {
+    const { error } = await this.sb.from('patient_messages').update({ read_at: new Date().toISOString() })
+      .eq('patient_id', patientId).neq('sender_role', readerRole).is('read_at', null);
+    if (error) throw toDataError(error);
+  }
+
   async getSession(id: string) {
     const { data, error } = await this.sb.from('sessions').select('*').eq('id', id).maybeSingle();
     if (error) throw toDataError(error);
@@ -135,21 +168,21 @@ export class SupabaseDataService implements DataService {
 
   async listPatients(_user: AppUser) {
     void _user; // RLS already restricts rows to what this user may see
-    const { data, error } = await this.sb.from('patients').select('id, patient_code, condition, therapist_id, is_demo, profiles(name)');
+    const { data, error } = await this.sb.from('patients').select('id, patient_code, condition, therapist_id, is_demo, profile, profiles(name)');
     if (error) throw toDataError(error);
-    return (data as unknown as { id: string; patient_code: string; condition: string | null; therapist_id: string | null; is_demo: boolean; profiles: { name: string } | null }[])
+    return (data as unknown as { id: string; patient_code: string; condition: string | null; therapist_id: string | null; is_demo: boolean; profile: PatientProfile | null; profiles: { name: string } | null }[])
       .map((p): PatientSummary => ({
         id: p.id, patientCode: p.patient_code, condition: p.condition ?? undefined,
-        therapistId: p.therapist_id ?? undefined, isDemo: p.is_demo, name: p.profiles?.name ?? p.patient_code,
+        therapistId: p.therapist_id ?? undefined, isDemo: p.is_demo, name: p.profiles?.name ?? p.patient_code, profile: p.profile ?? undefined,
       }));
   }
 
   async getPatient(id: string) {
-    const { data, error } = await this.sb.from('patients').select('id, patient_code, condition, therapist_id, is_demo, profiles(name)').eq('id', id).maybeSingle();
+    const { data, error } = await this.sb.from('patients').select('id, patient_code, condition, therapist_id, is_demo, profile, profiles(name)').eq('id', id).maybeSingle();
     if (error) throw toDataError(error);
     if (!data) return null;
-    const p = data as unknown as { id: string; patient_code: string; condition: string | null; therapist_id: string | null; is_demo: boolean; profiles: { name: string } | null };
-    return { id: p.id, patientCode: p.patient_code, condition: p.condition ?? undefined, therapistId: p.therapist_id ?? undefined, isDemo: p.is_demo, name: p.profiles?.name ?? p.patient_code };
+    const p = data as unknown as { id: string; patient_code: string; condition: string | null; therapist_id: string | null; is_demo: boolean; profile: PatientProfile | null; profiles: { name: string } | null };
+    return { id: p.id, patientCode: p.patient_code, condition: p.condition ?? undefined, therapistId: p.therapist_id ?? undefined, isDemo: p.is_demo, name: p.profiles?.name ?? p.patient_code, profile: p.profile ?? undefined };
   }
 
   async resetDemoData() {

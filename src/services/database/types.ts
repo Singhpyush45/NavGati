@@ -1,4 +1,4 @@
-import type { AppUser, CarePlan, PatientSummary, Role, SessionFeedback, SessionRecord, TherapistNote } from '@/types';
+import type { AppUser, CarePlan, PatientMessage, PatientSummary, Role, SessionFeedback, SessionRecord, TherapistNote } from '@/types';
 
 export interface DataService {
   readonly backend: 'supabase' | 'local';
@@ -17,6 +17,11 @@ export interface DataService {
   getCarePlan(patientId: string): Promise<CarePlan | null>;
   /** Therapists/admins only. Validated before saving; also enforced by RLS on Supabase. */
   saveCarePlan(plan: Omit<CarePlan, 'updatedAt'>, role: Role): Promise<CarePlan>;
+  /** Conversation between a patient and their therapist, oldest first. */
+  listMessages(patientId: string): Promise<PatientMessage[]>;
+  sendMessage(msg: Omit<PatientMessage, 'id' | 'createdAt' | 'readAt'>): Promise<PatientMessage>;
+  /** Marks messages sent by the other side as read. */
+  markMessagesRead(patientId: string, readerRole: 'PATIENT' | 'THERAPIST'): Promise<void>;
 }
 
 export interface AuthService {

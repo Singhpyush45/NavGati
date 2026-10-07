@@ -267,3 +267,41 @@ create policy care_plans_insert on public.care_plans for insert
 create policy care_plans_update on public.care_plans for update
   using (public.app_role() in ('THERAPIST','ADMIN') and public.can_access_patient(patient_id))
   with check (updated_by_id = auth.uid() and public.app_role() in ('THERAPIST','ADMIN') and public.can_access_patient(patient_id));
+
+-- ─────────────────────────────────────────────────────────────
+-- v4 (ReThink Hackathon 2026, built on-site): patient profile + patient ⇄ therapist messages
+-- ─────────────────────────────────────────────────────────────
+alter table public.patients add column if not exists profile jsonb not null default '{}'::jsonb;
+-- Therapists may edit profile details of their own patients.
+create policy "patients: therapist updates profile" on public.patients for update
+  using (public.app_role() in ('THERAPIST','ADMIN') and public.can_access_patient(id))
+  with check (public.app_role() in ('THERAPIST','ADMIN') and public.can_access_patient(id));
+
+create table if not exists public.patient_messages (
+  id           uuid primary key default gen_random_uuid(),
+  patient_id   uuid not null references public.patients(id) on delete cascade,
+  sender_role  text not null check (sender_role in ('PATIENT','THERAPIST')),
+  sender_id    uuid not null references public.profiles(id),
+  sender_name  text not null,
+  category     text not null default 'general' check (category in ('general','pain','question','problem')),
+  body         text not null default '' check (char_length(body) <= 1000),
+  -- MVP: voice note stored inline as {dataUrl, durationSec, mime} (≤ ~2 MB). Production: move to Supabase Storage.
+  audio        jsonb,
+  created_at   timestamptz not null default now(),
+  read_at      timestamptz,
+  check (char_length(body) > 0 or audio is not null)
+);
+create index if not exists patient_messages_patient on public.patient_messages(patient_id, created_at);
+alter table public.patient_messages enable row level security;
+
+create policy messages_read on public.patient_messages for select
+  using (public.can_access_patient(patient_id));
+-- Patients write only into their own thread as PATIENT; therapists only to assigned patients as THERAPIST.
+create policy messages_insert on public.patient_messages for insert with check (
+  sender_id = auth.uid() and (
+    (sender_role = 'PATIENT' and patient_id = auth.uid()) or
+    (sender_role = 'THERAPIST' and public.app_role() in ('THERAPIST','ADMIN') and public.can_access_patient(patient_id))
+  ));
+-- Either side can mark the thread as read (only read_at changes in the app).
+create policy messages_mark_read on public.patient_messages for update
+  using (public.can_access_patient(patient_id)) with check (public.can_access_patient(patient_id));
