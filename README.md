@@ -1,5 +1,20 @@
 # NavGati
 
+## 🏁 Built on-site at ReThink Hackathon 2026 (7 Oct, MAC Delhi) — Web Development vertical
+
+**New today**
+- **Weekly Care Plan (exercise prescription):** therapist sets exercises, reps, sessions/week, ROM goal and instructions per patient.
+- **Patient "My care plan":** weekly progress, next exercise on the home screen, one-tap start with reps/side pre-filled.
+- **Therapist view:** care-plan adherence column on the patient list + "Behind care plan" review flag.
+- **Security:** new `care_plans` table with Row Level Security (patients read own plan; only assigned therapists can write). See `supabase/schema.sql` (v3).
+- **Tests:** `tests/carePlan.test.ts` (weekly progress, validation, role check).
+- Renamed RehabX → **NavGati**.
+
+**Built before the event (existing base):** camera pose tracking (MediaPipe), rep counting, ROM, form feedback, patient/therapist dashboards, notes.
+
+**Demo logins (local mode):** `patient@navgati.demo` / `therapist@navgati.demo`, password `demo1234`.
+
+
 **AI-powered rehabilitation & recovery platform — prototype**
 
 > Turning every rehabilitation movement into measurable recovery.
