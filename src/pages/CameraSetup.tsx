@@ -103,7 +103,7 @@ export default function CameraSetup() {
                 <ol className="mt-2 space-y-1.5 text-sm text-muted">
                   {exercise.instructions.map((i, n) => <li key={i} className="flex gap-2"><span className="font-semibold text-tide">{n + 1}.</span>{i}</li>)}
                 </ol>
-                <p className="mt-3 text-xs text-muted">The amber joint is the one RehabX measures.</p>
+                <p className="mt-3 text-xs text-muted">The amber joint is the one NavGati measures.</p>
               </div>
             </Panel>
           )}

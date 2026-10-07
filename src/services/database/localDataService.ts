@@ -19,12 +19,12 @@ export class MemoryStore implements KeyValueStore {
 }
 
 const K = {
-  sessions: 'rehabx:sessions',
-  patients: 'rehabx:patients',
-  users: 'rehabx:users',
-  current: 'rehabx:current-user',
-  notes: 'rehabx:notes',
-  seeded: 'rehabx:seeded-v3',
+  sessions: 'navgati:sessions',
+  patients: 'navgati:patients',
+  users: 'navgati:users',
+  current: 'navgati:current-user',
+  notes: 'navgati:notes',
+  seeded: 'navgati:seeded-v3',
 };
 
 function read<T>(store: KeyValueStore, key: string, fallback: T): T {
@@ -111,8 +111,8 @@ export class LocalDataService implements DataService {
 interface StoredUser extends AppUser { passwordHash: string }
 
 export const DEMO_ACCOUNTS = [
-  { email: 'patient@rehabx.demo', password: 'demo1234', role: 'PATIENT' as Role },
-  { email: 'therapist@rehabx.demo', password: 'demo1234', role: 'THERAPIST' as Role },
+  { email: 'patient@navgati.demo', password: 'demo1234', role: 'PATIENT' as Role },
+  { email: 'therapist@navgati.demo', password: 'demo1234', role: 'THERAPIST' as Role },
 ];
 
 /** Local demo authentication: salted PBKDF2 hashes, role-based users. */

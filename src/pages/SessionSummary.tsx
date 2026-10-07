@@ -91,7 +91,7 @@ export default function SessionSummary() {
       {user?.role === 'PATIENT' ? (
         <Panel className="glow-border p-6">
           <h2 className="font-semibold">How did it feel?</h2>
-          <p className="mb-5 text-xs text-muted">Your ratings are shared with your therapist and shown in your progress. RehabX doesn’t interpret pain — your therapist does.</p>
+          <p className="mb-5 text-xs text-muted">Your ratings are shared with your therapist and shown in your progress. NavGati doesn’t interpret pain — your therapist does.</p>
           <SessionFeedbackForm session={s} />
         </Panel>
       ) : (s.painAfter != null || s.difficulty != null || s.patientNote) ? (

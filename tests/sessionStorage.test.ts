@@ -38,7 +38,7 @@ describe('local auth & roles', () => {
     const auth = new LocalAuthService(store, db);
     const therapist = await auth.signIn(DEMO_ACCOUNTS[1].email, DEMO_ACCOUNTS[1].password);
     expect(therapist.role).toBe('THERAPIST');
-    expect(store.getItem('rehabx:users')).not.toContain('demo1234');
+    expect(store.getItem('navgati:users')).not.toContain('demo1234');
     await expect(auth.signIn(DEMO_ACCOUNTS[0].email, 'wrong-pass')).rejects.toThrow(/incorrect/);
 
     const patient = await auth.signIn(DEMO_ACCOUNTS[0].email, DEMO_ACCOUNTS[0].password);

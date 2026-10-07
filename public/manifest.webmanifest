@@ -1,6 +1,6 @@
 {
-  "name": "RehabX \u2014 Rehabilitation movement monitoring",
-  "short_name": "RehabX",
+  "name": "NavGati \u2014 Rehabilitation movement monitoring",
+  "short_name": "NavGati",
   "description": "Camera-based rehabilitation exercise monitoring: joint angles, ROM, reps and form.",
   "start_url": "/app",
   "scope": "/",

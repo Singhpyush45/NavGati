@@ -1,7 +1,7 @@
-/* RehabX service worker — makes the app installable and fast on repeat visits.
+/* NavGati service worker — makes the app installable and fast on repeat visits.
    Strategy: app shell network-first (always fresh when online), hashed assets cache-first,
    pose model + fonts stale-while-revalidate (so a second visit works even on weak networks). */
-const VERSION = 'rehabx-v3';
+const VERSION = 'navgati-v3';
 const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/favicon.svg', '/icon-192.png'];
 const RUNTIME_HOSTS = ['cdn.jsdelivr.net', 'storage.googleapis.com', 'fonts.googleapis.com', 'fonts.gstatic.com'];
 

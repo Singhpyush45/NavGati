@@ -101,7 +101,7 @@ export default function PatientDashboard() {
       )}
 
       {all.length === 0 ? (
-        <EmptyState title="Your progress will appear here" body="Complete your first session and RehabX will start charting range of motion and form over time." action={<Link to="/exercises" className="btn-primary">Choose an exercise</Link>} />
+        <EmptyState title="Your progress will appear here" body="Complete your first session and NavGati will start charting range of motion and form over time." action={<Link to="/exercises" className="btn-primary">Choose an exercise</Link>} />
       ) : (
         <>
           <Panel className="stagger grid grid-cols-2 gap-6 p-6 sm:grid-cols-4">

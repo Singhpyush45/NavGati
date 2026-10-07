@@ -1,6 +1,6 @@
 import type { BodyPoint, Landmark, Side } from '@/types';
 
-/** MediaPipe Pose (33-point) indices for the points RehabX uses. */
+/** MediaPipe Pose (33-point) indices for the points NavGati uses. */
 export const LANDMARK_INDEX: Record<Side, Record<Exclude<BodyPoint, 'nose'>, number>> = {
   left: { shoulder: 11, elbow: 13, wrist: 15, hip: 23, knee: 25, ankle: 27, heel: 29, foot: 31 },
   right: { shoulder: 12, elbow: 14, wrist: 16, hip: 24, knee: 26, ankle: 28, heel: 30, foot: 32 },

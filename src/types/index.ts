@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────
-// Core domain types for RehabX.
+// Core domain types for NavGati.
 // Algorithms depend only on these types — never on React/UI.
 // ─────────────────────────────────────────────────────────────
 

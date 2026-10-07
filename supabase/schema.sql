@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════════════
--- RehabX database schema (Supabase / PostgreSQL)
+-- NavGati database schema (Supabase / PostgreSQL)
 -- Run in the Supabase SQL editor. Passwords are handled by Supabase Auth
 -- (bcrypt) — no password column exists in these tables.
 -- ═══════════════════════════════════════════════════════════════

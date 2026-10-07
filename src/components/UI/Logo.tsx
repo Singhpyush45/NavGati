@@ -1,4 +1,4 @@
-/** The RehabX mark: a limb bent at a joint, with the measured angle in amber. */
+/** The NavGati mark: a limb bent at a joint, with the measured angle in amber. */
 export function LogoMark({ size = 28 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
@@ -14,7 +14,7 @@ export function Logo() {
   return (
     <span className="inline-flex items-center gap-2.5">
       <LogoMark />
-      <span className="text-[17px] font-semibold tracking-tight">RehabX</span>
+      <span className="text-[17px] font-semibold tracking-tight">NavGati</span>
     </span>
   );
 }

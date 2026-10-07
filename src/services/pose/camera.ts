@@ -8,7 +8,7 @@ export const CAMERA_ERROR_TEXT: Record<CameraErrorCode, string> = {
   permission_denied: 'Camera access was blocked. Allow camera access in your browser’s site settings, then try again.',
   unavailable: 'No camera was found. Connect a camera, or use demo simulation mode.',
   in_use: 'The camera is being used by another app. Close that app and try again.',
-  insecure: 'The camera only works on https:// or localhost. Open RehabX from a secure address.',
+  insecure: 'The camera only works on https:// or localhost. Open NavGati from a secure address.',
   unknown: 'The camera could not be started. Try again, or use demo simulation mode.',
 };
 

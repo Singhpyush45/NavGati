@@ -45,7 +45,7 @@ export default function Login() {
     <div className="grid min-h-screen lg:grid-cols-2">
       <Aurora spotlight />
       <div className="flex flex-col justify-between px-5 py-8 sm:px-12" style={{ paddingTop: 'max(2rem, env(safe-area-inset-top))' }}>
-        <Link to="/" aria-label="RehabX home"><Logo /></Link>
+        <Link to="/" aria-label="NavGati home"><Logo /></Link>
         <div className="panel page-enter mx-auto my-10 w-full max-w-md p-6 sm:p-8">
           <h1 className="text-3xl font-semibold tracking-tight">{mode === 'signin' ? 'Sign in' : 'Create an account'}</h1>
           <p className="mt-1 text-sm text-muted">{mode === 'signin' ? 'Patients and therapists use the same sign-in.' : 'Choose whether you are a patient or a therapist.'}</p>
@@ -74,7 +74,7 @@ export default function Login() {
           </form>
 
           <button className="mt-4 text-sm text-tide hover:underline" onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(null); }}>
-            {mode === 'signin' ? 'New to RehabX? Create an account' : 'Already have an account? Sign in'}
+            {mode === 'signin' ? 'New to NavGati? Create an account' : 'Already have an account? Sign in'}
           </button>
 
           {backend === 'local' && (

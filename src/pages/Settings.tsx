@@ -23,12 +23,12 @@ export default function Settings() {
   const navigate = useNavigate();
   const [resetMsg, setResetMsg] = useState<string | null>(null);
   type InstallEvt = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
-  const getEvt = () => (window as unknown as { __rehabxInstall?: InstallEvt }).__rehabxInstall ?? null;
+  const getEvt = () => (window as unknown as { __navgatiInstall?: InstallEvt }).__navgatiInstall ?? null;
   const [installEvt, setInstallEvt] = useState<InstallEvt | null>(getEvt);
   useEffect(() => {
     const h = () => setInstallEvt(getEvt());
-    window.addEventListener('rehabx-installable', h);
-    return () => window.removeEventListener('rehabx-installable', h);
+    window.addEventListener('navgati-installable', h);
+    return () => window.removeEventListener('navgati-installable', h);
   }, []);
   const standalone = window.matchMedia('(display-mode: standalone)').matches;
   const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
@@ -36,7 +36,7 @@ export default function Settings() {
     if (!installEvt) return;
     await installEvt.prompt();
     await installEvt.userChoice.catch(() => null);
-    (window as unknown as { __rehabxInstall?: Event }).__rehabxInstall = undefined;
+    (window as unknown as { __navgatiInstall?: Event }).__navgatiInstall = undefined;
     setInstallEvt(null);
   };
 
@@ -89,11 +89,11 @@ export default function Settings() {
       <Panel className="space-y-3 p-6">
         <h2 className="font-semibold">Install on your phone</h2>
         {standalone ? (
-          <p className="text-sm text-muted">RehabX is installed and running as an app. ✓</p>
+          <p className="text-sm text-muted">NavGati is installed and running as an app. ✓</p>
         ) : installEvt ? (
           <>
-            <p className="text-sm text-muted">Add RehabX to your home screen — it opens full-screen like a normal app and loads faster.</p>
-            <button className="btn-primary" onClick={install}>Install RehabX</button>
+            <p className="text-sm text-muted">Add NavGati to your home screen — it opens full-screen like a normal app and loads faster.</p>
+            <button className="btn-primary" onClick={install}>Install NavGati</button>
           </>
         ) : ios ? (
           <p className="text-sm text-muted">In Safari, tap the <span className="font-medium text-ink">Share</span> button, then <span className="font-medium text-ink">Add to Home Screen</span>.</p>

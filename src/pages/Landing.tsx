@@ -55,7 +55,7 @@ export default function Landing() {
             Turning every rehabilitation movement into <span className="text-gradient italic">measurable recovery.</span>
           </h1>
           <p className="mt-6 max-w-lg text-[17px] leading-relaxed text-muted">
-            RehabX uses an ordinary camera to measure joint angles, range of motion, repetitions and form while a patient exercises at home — and gives their therapist the numbers.
+            NavGati uses an ordinary camera to measure joint angles, range of motion, repetitions and form while a patient exercises at home — and gives their therapist the numbers.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link to="/login?role=patient" className="btn-primary !px-6 !py-3.5 text-[15px]">
@@ -126,7 +126,7 @@ export default function Landing() {
       {/* ── How it works ── */}
       <section id="how" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-16 sm:px-8">
         <div data-reveal className="text-center">
-          <p className="text-sm font-medium text-tide">How RehabX works</p>
+          <p className="text-sm font-medium text-tide">How NavGati works</p>
           <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Six steps, running live while the patient moves.</h2>
         </div>
         <ol className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -175,7 +175,7 @@ export default function Landing() {
             {[
               ['Range of motion', 'Largest minus smallest angle observed in each repetition.'],
               ['Form quality', 'Share of frames that meet the exercise’s rules, plus whether the target angle was reached.'],
-              ['Validation', 'If a different joint is moving than the one prescribed, RehabX says so instead of counting.'],
+              ['Validation', 'If a different joint is moving than the one prescribed, NavGati says so instead of counting.'],
             ].map(([k, v]) => (
               <div key={k} className="panel grid grid-cols-[130px_1fr] gap-4 px-4 py-3">
                 <dt className="font-medium">{k}</dt><dd className="text-muted">{v}</dd>
@@ -193,7 +193,7 @@ export default function Landing() {
             ))}
           </ul>
           <p className="mt-5 border-t border-line pt-4 text-sm text-muted">
-            RehabX never tells a patient to push harder. It reports whether the prescribed target was reached and reminds them to stop and contact their therapist if anything hurts.
+            NavGati never tells a patient to push harder. It reports whether the prescribed target was reached and reminds them to stop and contact their therapist if anything hurts.
           </p>
         </div>
       </section>

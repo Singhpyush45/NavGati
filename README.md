@@ -1,18 +1,18 @@
-# RehabX
+# NavGati
 
 **AI-powered rehabilitation & recovery platform — prototype**
 
 > Turning every rehabilitation movement into measurable recovery.
 
-> **Medical disclaimer.** RehabX is a rehabilitation monitoring and decision-support prototype. It does not replace professional medical diagnosis or clinical judgment. It has **not** been clinically validated.
+> **Medical disclaimer.** NavGati is a rehabilitation monitoring and decision-support prototype. It does not replace professional medical diagnosis or clinical judgment. It has **not** been clinically validated.
 
 ---
 
-## 1. What RehabX is
+## 1. What NavGati is
 
-RehabX turns an ordinary laptop or phone camera into a contactless movement-measurement tool for rehabilitation exercises. The patient performs a prescribed exercise in front of the camera; RehabX detects body landmarks in the browser, measures the joint angle frame by frame, counts complete repetitions, computes range of motion (ROM), scores movement quality against configurable form rules, gives short real-time feedback, and stores **metrics only** (never video) so patients and therapists can see measured trends across sessions.
+NavGati turns an ordinary laptop or phone camera into a contactless movement-measurement tool for rehabilitation exercises. The patient performs a prescribed exercise in front of the camera; NavGati detects body landmarks in the browser, measures the joint angle frame by frame, counts complete repetitions, computes range of motion (ROM), scores movement quality against configurable form rules, gives short real-time feedback, and stores **metrics only** (never video) so patients and therapists can see measured trends across sessions.
 
-RehabX **measures**. It does not diagnose, it does not claim to heal, and it does not replace a physiotherapist.
+NavGati **measures**. It does not diagnose, it does not claim to heal, and it does not replace a physiotherapist.
 
 ## 2. Problem
 
@@ -107,7 +107,7 @@ ROM for a repetition = `maxAngle − minAngle` observed during that repetition. 
 * **Best ROM** — largest per-rep ROM,
 * **Session min / max angle** — extremes seen across the whole session.
 
-Example: min 80°, max 150° → ROM 70°. RehabX does **not** claim any ROM is "normal". Each exercise may carry an optional `referenceRom` which is shown only if enabled in Settings and is always labelled *reference*.
+Example: min 80°, max 150° → ROM 70°. NavGati does **not** claim any ROM is "normal". Each exercise may carry an optional `referenceRom` which is shown only if enabled in Settings and is always labelled *reference*.
 
 ## 9. How repetition counting works
 
@@ -197,7 +197,7 @@ Other scripts: `npm test` (unit tests), `npm run typecheck`, `npm run build`, `n
 
 | Variable | Meaning |
 |---|---|
-| `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` | If both are set, RehabX uses Supabase Auth + Postgres. If empty, it runs in **local mode**: data in the browser's `localStorage`, passwords stored as salted PBKDF2 hashes, demo accounts pre-created. |
+| `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` | If both are set, NavGati uses Supabase Auth + Postgres. If empty, it runs in **local mode**: data in the browser's `localStorage`, passwords stored as salted PBKDF2 hashes, demo accounts pre-created. |
 | `VITE_MEDIAPIPE_WASM_PATH` | Where the MediaPipe WASM runtime is loaded from (default: jsDelivr CDN). |
 | `VITE_POSE_MODEL_URL` | Pose Landmarker `.task` model (default: Google storage, ~5 MB, downloaded once and cached). |
 
@@ -209,8 +209,8 @@ Other scripts: `npm test` (unit tests), `npm run typecheck`, `npm run build`, `n
 
 | Role | Email | Password |
 |---|---|---|
-| Patient (P001) | `patient@rehabx.demo` | `demo1234` |
-| Therapist | `therapist@rehabx.demo` | `demo1234` |
+| Patient (P001) | `patient@navgati.demo` | `demo1234` |
+| Therapist | `therapist@navgati.demo` | `demo1234` |
 
 The key flow: sign in as the patient → *Start today's exercise* → Camera setup (Knee Extension, *Live camera*) → allow camera → sit side-on to the camera with the whole leg visible → *Start exercise* → straighten and bend the knee → reps, angle, ROM, form and feedback update live → *End session* → summary is saved → dashboard and Progress show it. Sign in as the therapist to see the patient list and patient P001's detail page.
 
@@ -248,13 +248,13 @@ Therapist-configurable thresholds per patient · exercise prescription & schedul
 
 ## 21. Medical disclaimer
 
-RehabX is a rehabilitation monitoring and decision-support prototype. It does not replace professional medical diagnosis or clinical judgment. It does not diagnose injuries, does not guarantee recovery, and is not a medical device. Always follow the exercises prescribed by your therapist, and stop and consult them if you experience pain.
+NavGati is a rehabilitation monitoring and decision-support prototype. It does not replace professional medical diagnosis or clinical judgment. It does not diagnose injuries, does not guarantee recovery, and is not a medical device. Always follow the exercises prescribed by your therapist, and stop and consult them if you experience pain.
 
 ## 22. Engagement & phone features (v2)
 
 Added after reviewing what established home-exercise apps (e.g. Physitrack/PhysiApp, HealHabit) offer:
 
-* **Patient-reported outcomes** — after each session the patient rates pain before/after (0–10 numeric scale) and perceived difficulty (1–5), with an optional note. Pain trends appear in Progress and on the therapist's patient page; rising or high pain adds a *Requires therapist review* flag. RehabX never interprets pain clinically.
+* **Patient-reported outcomes** — after each session the patient rates pain before/after (0–10 numeric scale) and perceived difficulty (1–5), with an optional note. Pain trends appear in Progress and on the therapist's patient page; rising or high pain adds a *Requires therapist review* flag. NavGati never interprets pain clinically.
 * **Animated exercise demonstrations** — every exercise card and the setup screen show a looping skeleton generated by the same simulator used in demo mode, so the demonstration always matches the exercise configuration.
 * **Streak + 12-week activity heatmap** on the patient dashboard and progress pages.
 * **Therapist → patient notes** (table `therapist_notes`, RLS-protected); the newest note is shown on the patient's home screen.

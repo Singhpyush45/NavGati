@@ -96,7 +96,7 @@ export function EmptyState({ title, body, action }: { title: string; body: strin
 export function Disclaimer({ compact = false }: { compact?: boolean }) {
   return (
     <p className={`text-muted ${compact ? 'text-xs' : 'text-sm'}`}>
-      RehabX is a rehabilitation monitoring and decision-support prototype. It does not replace professional medical diagnosis or clinical judgment.
+      NavGati is a rehabilitation monitoring and decision-support prototype. It does not replace professional medical diagnosis or clinical judgment.
     </p>
   );
 }

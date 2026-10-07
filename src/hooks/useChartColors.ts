@@ -11,8 +11,8 @@ export function useChartColors() {
   const [colors, setColors] = useState(read);
   useEffect(() => {
     const h = () => setColors(read());
-    window.addEventListener('rehabx-theme', h);
-    return () => window.removeEventListener('rehabx-theme', h);
+    window.addEventListener('navgati-theme', h);
+    return () => window.removeEventListener('navgati-theme', h);
   }, []);
   return colors;
 }

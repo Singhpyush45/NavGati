@@ -55,7 +55,7 @@ export default function LiveExercise() {
     return (
       <EmptyState
         title="Exercise not supported yet."
-        body="This movement can’t be measured reliably by the current version of RehabX. Please choose another exercise, or follow your therapist’s instructions for this one."
+        body="This movement can’t be measured reliably by the current version of NavGati. Please choose another exercise, or follow your therapist’s instructions for this one."
         action={<Link to="/exercises" className="btn-primary">Back to exercise library</Link>}
       />
     );

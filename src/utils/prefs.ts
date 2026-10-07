@@ -9,7 +9,7 @@ export interface Prefs {
   voiceFeedback: boolean;
 }
 
-const KEY = 'rehabx:prefs';
+const KEY = 'navgati:prefs';
 const DEFAULTS: Prefs = { theme: 'system', defaultSide: 'auto', defaultTargetReps: 12, showReferenceValues: false, voiceFeedback: false };
 const listeners = new Set<() => void>();
 
@@ -38,5 +38,5 @@ export function usePrefs(): Prefs {
 export function applyTheme() {
   const dark = cache.theme === 'dark' || (cache.theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
   document.documentElement.classList.toggle('dark', dark);
-  window.dispatchEvent(new Event('rehabx-theme'));
+  window.dispatchEvent(new Event('navgati-theme'));
 }

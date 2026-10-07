@@ -9,7 +9,7 @@ import './index.css';
 applyTheme();
 
 // Keep the browser's install prompt so Settings can offer an "Install app" button.
-window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); (window as unknown as { __rehabxInstall?: Event }).__rehabxInstall = e; window.dispatchEvent(new Event('rehabx-installable')); });
+window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); (window as unknown as { __navgatiInstall?: Event }).__navgatiInstall = e; window.dispatchEvent(new Event('navgati-installable')); });
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
