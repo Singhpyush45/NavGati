@@ -1,4 +1,4 @@
-import type { AppUser, PatientSummary, Role, SessionFeedback, SessionRecord, TherapistNote } from '@/types';
+import type { AppUser, CarePlan, PatientSummary, Role, SessionFeedback, SessionRecord, TherapistNote } from '@/types';
 
 export interface DataService {
   readonly backend: 'supabase' | 'local';
@@ -13,6 +13,10 @@ export interface DataService {
   updateSessionFeedback(id: string, fb: SessionFeedback): Promise<void>;
   listNotes(patientId: string): Promise<TherapistNote[]>;
   addNote(note: Omit<TherapistNote, 'id' | 'createdAt'>): Promise<TherapistNote>;
+  /** Weekly care plan prescribed by the therapist (null when none yet). */
+  getCarePlan(patientId: string): Promise<CarePlan | null>;
+  /** Therapists/admins only. Validated before saving; also enforced by RLS on Supabase. */
+  saveCarePlan(plan: Omit<CarePlan, 'updatedAt'>, role: Role): Promise<CarePlan>;
 }
 
 export interface AuthService {

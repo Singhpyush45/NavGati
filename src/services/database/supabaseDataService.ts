@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import type { AppUser, PatientSummary, Role, SessionFeedback, SessionRecord, TherapistNote } from '@/types';
+import type { AppUser, CarePlan, PatientSummary, Role, SessionFeedback, SessionRecord, TherapistNote } from '@/types';
+import { validateCarePlan } from '@/services/analytics/carePlan';
 import type { AuthService, DataService } from './types';
 import { DataError } from './types';
 
@@ -98,6 +99,26 @@ export class SupabaseDataService implements DataService {
     if (error) throw toDataError(error);
     const r = data as { id: string; created_at: string };
     return { ...n, id: r.id, createdAt: r.created_at };
+  }
+
+  async getCarePlan(patientId: string) {
+    const { data, error } = await this.sb.from('care_plans').select('*').eq('patient_id', patientId).maybeSingle();
+    if (error) throw toDataError(error);
+    if (!data) return null;
+    const r = data as { patient_id: string; items: CarePlan['items']; updated_at: string; updated_by_id: string; updated_by_name: string };
+    return { patientId: r.patient_id, items: r.items ?? [], updatedAt: r.updated_at, updatedById: r.updated_by_id, updatedByName: r.updated_by_name };
+  }
+
+  async saveCarePlan(plan: Omit<CarePlan, 'updatedAt'>, role: Role) {
+    // UI-side check for clear errors; the real guard is the care_plans RLS policy.
+    if (role !== 'THERAPIST' && role !== 'ADMIN') throw new DataError('permission', 'Only a therapist can change the care plan.');
+    const errors = validateCarePlan(plan.items);
+    if (errors.length) throw new DataError('unknown', errors[0]);
+    const { data, error } = await this.sb.from('care_plans').upsert({
+      patient_id: plan.patientId, items: plan.items, updated_by_id: plan.updatedById, updated_by_name: plan.updatedByName, updated_at: new Date().toISOString(),
+    }).select().single();
+    if (error) throw toDataError(error);
+    return { ...plan, updatedAt: (data as { updated_at: string }).updated_at };
   }
 
   async getSession(id: string) {

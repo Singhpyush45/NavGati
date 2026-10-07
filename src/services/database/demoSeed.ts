@@ -1,4 +1,4 @@
-import type { PatientSummary, SessionRecord, TherapistNote } from '@/types';
+import type { CarePlan, PatientSummary, SessionRecord, TherapistNote } from '@/types';
 import { getExercise } from '@/services/exercise/exercises';
 import { qualityLabel } from '@/algorithms/formAssessment';
 
@@ -105,3 +105,22 @@ export const DEMO_NOTES: TherapistNote[] = [
     createdAt: new Date(Date.now() - 2 * 864e5).toISOString(),
   },
 ];
+
+/** Demo weekly care plans (synthetic). Keyed by patient id. */
+export const DEMO_CARE_PLANS: Record<string, CarePlan> = {
+  p001: {
+    patientId: 'p001', updatedAt: new Date().toISOString(), updatedById: DEMO_THERAPIST_ID, updatedByName: 'Demo Therapist',
+    items: [
+      { exerciseId: 'knee_extension', side: 'auto', targetReps: 12, sessionsPerWeek: 5, targetRom: 90, instructions: 'Keep the thigh supported on the chair. Slow and controlled.' },
+      { exerciseId: 'knee_flexion', side: 'auto', targetReps: 10, sessionsPerWeek: 3, targetRom: 80, instructions: 'Hold a chair for balance.' },
+    ],
+  },
+  p002: {
+    patientId: 'p002', updatedAt: new Date().toISOString(), updatedById: DEMO_THERAPIST_ID, updatedByName: 'Demo Therapist',
+    items: [{ exerciseId: 'elbow_flexion', side: 'auto', targetReps: 10, sessionsPerWeek: 4, targetRom: 110 }],
+  },
+  p003: {
+    patientId: 'p003', updatedAt: new Date().toISOString(), updatedById: DEMO_THERAPIST_ID, updatedByName: 'Demo Therapist',
+    items: [{ exerciseId: 'shoulder_flexion', side: 'auto', targetReps: 10, sessionsPerWeek: 4, targetRom: 120, instructions: 'Stop if pain goes above 5/10.' }],
+  },
+};

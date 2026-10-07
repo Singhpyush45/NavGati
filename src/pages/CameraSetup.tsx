@@ -22,8 +22,10 @@ export default function CameraSetup() {
   const navigate = useNavigate();
   const prefs = getPrefs();
   const [exerciseId, setExerciseId] = useState(params.get('exercise') ?? 'knee_extension');
-  const [side, setSide] = useState<SidePreference>(prefs.defaultSide);
-  const [reps, setReps] = useState(prefs.defaultTargetReps);
+  // Pre-filled from the care plan link (/setup?exercise=…&reps=…&side=…) when present.
+  const sideParam = params.get('side');
+  const [side, setSide] = useState<SidePreference>(sideParam === 'left' || sideParam === 'right' || sideParam === 'auto' ? sideParam : prefs.defaultSide);
+  const [reps, setReps] = useState(Math.max(1, Math.min(50, Number(params.get('reps')) || prefs.defaultTargetReps)));
   const [mode, setMode] = useState<'camera' | 'demo'>(params.get('mode') === 'demo' ? 'demo' : 'camera');
   const [facing, setFacing] = useState<Facing>(params.get('cam') === 'environment' ? 'environment' : 'user');
   const exercise = getExercise(exerciseId) ?? EXERCISES[0];

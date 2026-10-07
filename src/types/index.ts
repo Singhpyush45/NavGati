@@ -278,3 +278,27 @@ export interface TherapistNote {
   body: string;
   createdAt: string;
 }
+
+// ─────────────── Care plan (built on-site at ReThink Hackathon 2026) ───────────────
+
+/** One prescribed exercise in a patient's weekly care plan. */
+export interface CarePlanItem {
+  exerciseId: string;
+  side: SidePreference;
+  targetReps: number;
+  /** How many sessions of this exercise the patient should do per week (Mon–Sun). */
+  sessionsPerWeek: number;
+  /** Optional ROM goal in degrees, set by the therapist (not a clinical norm). */
+  targetRom?: number | null;
+  /** Short instruction shown to the patient ("Keep the thigh supported"). */
+  instructions?: string;
+}
+
+/** A therapist-prescribed weekly exercise plan for one patient. */
+export interface CarePlan {
+  patientId: string;
+  items: CarePlanItem[];
+  updatedAt: string;
+  updatedById: string;
+  updatedByName: string;
+}

@@ -245,3 +245,25 @@ create policy notes_write on public.therapist_notes for insert
 -- Patients may add their own pain / difficulty rating to their own sessions.
 create policy "sessions: patient updates own feedback" on public.sessions for update
   using (patient_id = auth.uid()) with check (patient_id = auth.uid());
+
+-- ─────────────────────────────────────────────────────────────
+-- v3 (ReThink Hackathon 2026, built on-site): weekly care plans
+-- One plan per patient. items = [{exerciseId, side, targetReps, sessionsPerWeek, targetRom, instructions}]
+-- ─────────────────────────────────────────────────────────────
+create table if not exists public.care_plans (
+  patient_id       uuid primary key references public.patients(id) on delete cascade,
+  items            jsonb not null default '[]'::jsonb check (jsonb_typeof(items) = 'array' and jsonb_array_length(items) <= 6),
+  updated_by_id    uuid not null references public.profiles(id),
+  updated_by_name  text not null,
+  updated_at       timestamptz not null default now()
+);
+alter table public.care_plans enable row level security;
+
+-- Patients read their own plan; assigned therapists / admins read and write.
+create policy care_plans_read on public.care_plans for select
+  using (public.can_access_patient(patient_id));
+create policy care_plans_insert on public.care_plans for insert
+  with check (updated_by_id = auth.uid() and public.app_role() in ('THERAPIST','ADMIN') and public.can_access_patient(patient_id));
+create policy care_plans_update on public.care_plans for update
+  using (public.app_role() in ('THERAPIST','ADMIN') and public.can_access_patient(patient_id))
+  with check (updated_by_id = auth.uid() and public.app_role() in ('THERAPIST','ADMIN') and public.can_access_patient(patient_id));

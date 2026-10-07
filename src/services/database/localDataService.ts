@@ -1,7 +1,8 @@
-import type { AppUser, PatientSummary, Role, SessionFeedback, SessionRecord, TherapistNote } from '@/types';
+import type { AppUser, CarePlan, PatientSummary, Role, SessionFeedback, SessionRecord, TherapistNote } from '@/types';
+import { validateCarePlan } from '@/services/analytics/carePlan';
 import type { AuthService, DataService } from './types';
 import { DataError } from './types';
-import { DEMO_NOTES, DEMO_PATIENTS, DEMO_THERAPIST_ID, generateDemoSessions } from './demoSeed';
+import { DEMO_CARE_PLANS, DEMO_NOTES, DEMO_PATIENTS, DEMO_THERAPIST_ID, generateDemoSessions } from './demoSeed';
 import { hashPassword, verifyPassword } from './passwords';
 
 /** Minimal Storage interface so tests can inject an in-memory store. */
@@ -24,6 +25,7 @@ const K = {
   users: 'navgati:users',
   current: 'navgati:current-user',
   notes: 'navgati:notes',
+  plans: 'navgati:care-plans',
   seeded: 'navgati:seeded-v3',
 };
 
@@ -54,6 +56,7 @@ export class LocalDataService implements DataService {
     write(this.store, K.patients, DEMO_PATIENTS);
     write(this.store, K.sessions, generateDemoSessions());
     write(this.store, K.notes, DEMO_NOTES);
+    write(this.store, K.plans, DEMO_CARE_PLANS);
     this.store.setItem(K.seeded, '1');
   }
 
@@ -99,6 +102,20 @@ export class LocalDataService implements DataService {
     const note: TherapistNote = { ...n, body: body.slice(0, 1000), id: crypto.randomUUID(), createdAt: new Date().toISOString() };
     write(this.store, K.notes, [...read<TherapistNote[]>(this.store, K.notes, []), note]);
     return note;
+  }
+  async getCarePlan(patientId: string) {
+    // Older local data (before care plans existed) gets the demo plans on first read.
+    if (this.store.getItem(K.plans) === null) write(this.store, K.plans, DEMO_CARE_PLANS);
+    return read<Record<string, CarePlan>>(this.store, K.plans, {})[patientId] ?? null;
+  }
+  async saveCarePlan(plan: Omit<CarePlan, 'updatedAt'>, role: Role) {
+    if (role !== 'THERAPIST' && role !== 'ADMIN') throw new DataError('permission', 'Only a therapist can change the care plan.');
+    const errors = validateCarePlan(plan.items);
+    if (errors.length) throw new DataError('unknown', errors[0]);
+    const saved: CarePlan = { ...plan, updatedAt: new Date().toISOString() };
+    const all = read<Record<string, CarePlan>>(this.store, K.plans, {});
+    write(this.store, K.plans, { ...all, [plan.patientId]: saved });
+    return saved;
   }
   /** Used by local auth when a new patient registers. */
   addPatient(p: PatientSummary) {
