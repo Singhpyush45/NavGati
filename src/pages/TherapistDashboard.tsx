@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { PatientSummary, SessionRecord } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { useAsync } from '@/hooks/useAsync';
@@ -66,6 +66,7 @@ async function load(user: NonNullable<ReturnType<typeof useAuth>['user']>): Prom
 
 export default function TherapistDashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { data, error, loading, retry } = useAsync(() => load(user!), [user?.id]);
 
   if (loading) return <Spinner label="Loading patients…" />;
@@ -92,12 +93,14 @@ export default function TherapistDashboard() {
         <Stat label="Requires therapist review" value={needReview} />
       </Panel>
 
-      {unreadTotal > 0 && (
+      {rows.some((r) => r.messages.length) && (
         <Panel className="p-6">
-          <h2 className="font-semibold">New messages from patients <span className="ml-1 rounded-full bg-alert/10 px-2 py-0.5 text-xs text-alert">{unreadTotal}</span></h2>
+          <h2 className="font-semibold">Patient messages {unreadTotal > 0 && <span className="ml-1 rounded-full bg-alert/10 px-2 py-0.5 text-xs text-alert">{unreadTotal} new</span>}</h2>
           <ul className="mt-4 divide-y divide-line/70">
-            {rows.filter((r) => r.unread).map((r) => {
-              const m = latest(unreadFor(r.messages, 'THERAPIST'))!;
+            {rows.filter((r) => r.messages.length)
+              .sort((a, b) => urgency(b.messages) - urgency(a.messages) || latest(b.messages)!.createdAt.localeCompare(latest(a.messages)!.createdAt))
+              .map((r) => {
+              const m = latest(unreadFor(r.messages, 'THERAPIST')) ?? latest(r.messages)!;
               return (
                 <li key={r.patient.id}>
                   <Link to={`/therapist/patients/${r.patient.id}`} className="flex items-start gap-3 py-3 hover:bg-sunken/50">
@@ -106,9 +109,9 @@ export default function TherapistDashboard() {
                       <div className="flex flex-wrap items-center gap-2 text-sm"><span className="font-medium">{r.patient.name}</span>
                         <Badge tone={m.category === 'pain' ? 'alert' : m.category === 'problem' ? 'signal' : 'tide'}>{CATEGORY_LABEL[m.category]}</Badge>
                         <span className="text-xs text-muted">{shortDate(m.createdAt)}</span></div>
-                      <p className="mt-0.5 truncate text-sm text-muted">{m.audio ? '🎙 Voice note' + (m.body ? ' · ' : '') : ''}{m.body}</p>
+                      <p className="mt-0.5 truncate text-sm text-muted">{m.senderRole === 'THERAPIST' ? 'You: ' : ''}{m.audio ? '🎙 Voice note' + (m.body ? ' · ' : '') : ''}{m.body}</p>
                     </div>
-                    <span className="tabular text-xs text-muted">{r.unread} new →</span>
+                    <span className={`tabular whitespace-nowrap text-xs ${r.unread ? 'font-semibold text-alert' : 'text-muted'}`}>{r.unread ? `${r.unread} new` : m.senderRole === 'THERAPIST' ? 'You replied' : 'Seen'} →</span>
                   </Link>
                 </li>
               );
@@ -163,7 +166,10 @@ export default function TherapistDashboard() {
               </thead>
               <tbody className="tabular">
                 {rows.map((r) => (
-                  <tr key={r.patient.id} className="border-b border-line/70 last:border-0 hover:bg-sunken/60">
+                  <tr key={r.patient.id} className="cursor-pointer border-b border-line/70 last:border-0 hover:bg-sunken/60 focus:bg-sunken/60 focus:outline-none"
+                    tabIndex={0} aria-label={`Open ${r.patient.name}`}
+                    onClick={() => navigate(`/therapist/patients/${r.patient.id}`)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/therapist/patients/${r.patient.id}`); }}>
                     <td className="py-3 pr-4">
                       <Link to={`/therapist/patients/${r.patient.id}`} className="font-medium text-tide hover:underline">{r.patient.name}</Link>
                       {r.unread > 0 && <span className="ml-2 rounded-full bg-alert/10 px-1.5 py-0.5 text-[10px] font-semibold text-alert">{r.unread} msg</span>}
